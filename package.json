@@ -1,13 +1,13 @@
 {
-  "name": "voder",
+  "name": "vidore",
   "type": "module",
   "version": "0.0.1",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "exports": {
     ".": "./src/index.js",
-    "./jsx-runtime": "./src/index.js",
-    "./jsx-dev-runtime": "./src/index.js"
+    "./jsx-dev-runtime": "./src/index.js",
+    "./jsx-runtime": "./src/index.js"
   },
   "imports": {
     "#*": "./*"
