@@ -1,9 +1,13 @@
 {
-  "name": "vidore",
+  "name": "endr",
   "type": "module",
   "version": "0.0.1",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/caseywebdev/endr"
+  },
   "exports": {
     ".": "./src/index.js",
     "./jsx-dev-runtime": "./src/index.js",
