@@ -1,0 +1,19 @@
+#!/bin/sh -e
+
+node_modules/.bin/eslint src/index.js
+
+node_modules/.bin/tsc \
+  --declaration \
+  --emitDeclarationOnly \
+  --declarationDir types \
+  --allowJs src/index.js
+
+bumpit
+
+version=$(jq -r .version package.json)
+
+git commit -am 'Release $version'
+git tag -m $version $version
+git push
+git push --tags
+npm publish

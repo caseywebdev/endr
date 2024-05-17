@@ -1,7 +1,7 @@
 {
   "name": "endr",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "repository": {
@@ -9,9 +9,18 @@
     "url": "https://github.com/caseywebdev/endr"
   },
   "exports": {
-    ".": "./src/index.js",
-    "./jsx-dev-runtime": "./src/index.js",
-    "./jsx-runtime": "./src/index.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./jsx-runtime": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
   },
   "imports": {
     "#*": "./*"
@@ -21,5 +30,8 @@
     "eslint-config-coderiety": "2",
     "typescript": "5"
   },
-  "eslintConfig": { "root": true, "extends": "coderiety" }
+  "eslintConfig": {
+    "root": true,
+    "extends": "coderiety"
+  }
 }

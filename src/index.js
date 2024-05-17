@@ -1,5 +1,84 @@
-const { document, Node, requestAnimationFrame } = globalThis;
+const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
+  globalThis;
 
+/** @typedef {Def | string | number | boolean | null | undefined} Child */
+
+/** @typedef {Child | Child[]} Children */
+
+/** @typedef {(props: { [key: string]: unknown }) => Children} FunctionComponent */
+
+/**
+ * @typedef {{
+ *   children?: Children;
+ *   ref?: Ref<unknown>;
+ *   style?: Partial<CSSStyleDeclaration>;
+ * }} SharedProps
+ */
+
+/**
+ * @typedef {keyof HTMLElementTagNameMap
+ *   | keyof SVGElementTagNameMap
+ *   | FunctionComponent} Type
+ */
+
+/**
+ * @template {Type} T
+ * @typedef {T extends FunctionComponent
+ *   ? Parameters<T>[0]
+ *   : Partial<
+ *       SharedProps &
+ *         (T extends keyof HTMLElementTagNameMap
+ *           ? Omit<HTMLElementTagNameMap[T], keyof SharedProps>
+ *           : T extends keyof SVGElementTagNameMap
+ *             ? Omit<SVGElementTagNameMap[T], keyof SharedProps>
+ *             : { [key: string]: unknown })
+ *     >} Props
+ */
+
+/** @typedef {{ type: Type; props: Props<Type>; key: unknown }} Def */
+
+/**
+ * @template T
+ * @typedef {{ current: T }} Ref
+ */
+
+/**
+ * @typedef {{
+ *   contexts: Map<
+ *     ReturnType<typeof createContext>,
+ *     { vnodes: Set<Vnode>; value: unknown }
+ *   > | null;
+ *   child: Vnode | null;
+ *   deleted: boolean;
+ *   effects:
+ *     | null
+ *     | {
+ *         before: (() => void) | undefined;
+ *         after: (() => (() => void) | undefined) | undefined;
+ *         deps: unknown[] | undefined;
+ *       }[];
+ *   key: unknown;
+ *   node: Element | Text | null;
+ *   parent: Vnode | null;
+ *   parentNode: Element | null;
+ *   path: number[];
+ *   prevSiblingNode: Element | Text | null;
+ *   props: { [key: string]: unknown };
+ *   queued: boolean;
+ *   refs: Ref<unknown>[] | null;
+ *   shouldUpdate: boolean | null;
+ *   sibling: Vnode | null;
+ *   type: Type;
+ *   updated: boolean;
+ * }} Vnode
+ */
+
+/**
+ * @template {Type} T
+ * @param {T} type
+ * @param {Props<T>} props
+ * @param {unknown} [key]
+ */
 const jsx = (type, props, key) => ({ type, props, key });
 
 const jsxs = jsx;
@@ -8,20 +87,23 @@ const jsxDEV = jsx;
 
 const jsxsDEV = jsx;
 
-const Fragment = props => props.children;
+const Fragment = /** @param {{ children?: Children }} props */ props =>
+  props.children;
 
 const createContext = () => {
+  /** @param {{ value: unknown; children?: Children }} props */
   const Context = ({ value, children }) => {
-    const initialRef = useRef(true);
-    currentVnode.contexts = new Map(currentVnode.contexts);
-    if (initialRef.current) {
-      currentVnode.contexts.set(Context, { vnodes: new Set(), value });
-      initialRef.current = false;
-    }
-    const existing = currentVnode.contexts.get(Context);
-    if (value !== existing.value) {
-      currentVnode.contexts.set(Context, value);
-      existing.vnodes.forEach(vnode => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const context = useMemo(() => {
+      const context = { vnodes: /** @type {Set<Vnode>} */ (new Set()), value };
+      const vnode = /** @type {Vnode} */ (currentVnode);
+      vnode.contexts = new Map(vnode.contexts).set(Context, context);
+      return context;
+    });
+
+    if (value !== context.value) {
+      context.value = value;
+      context.vnodes.forEach(vnode => {
         vnode.shouldUpdate = true;
       });
     }
@@ -32,98 +114,125 @@ const createContext = () => {
   return Context;
 };
 
+/** @param {unknown} value */
 const isEmpty = value => value == null || value === false || value === '';
 
-const emptyDef = { props: {} };
+const emptyProps = /** @type {{ [k: string]: unknown }} */ ({});
 
-const textType = {};
+const emptyType = /** @type {Type} */ ({});
+
+const textType = /** @type {Type} */ ({});
 
 const svgNs = 'http://www.w3.org/2000/svg';
 
+/**
+ * @param {Def} def
+ * @param {Element} parentNode
+ */
 const createNode = (def, parentNode) => {
   const { type, props } = def;
 
-  if (!type) return null;
+  if (type === emptyType) return null;
 
-  if (type === textType) return document.createTextNode(props.nodeValue);
+  if (type === textType) {
+    return document.createTextNode(
+      /** @type {{ nodeValue: string }} */ (props).nodeValue
+    );
+  }
 
-  const node =
-    def.type === 'svg' || parentNode.namespaceURI === svgNs
-      ? document.createElementNS(svgNs, type)
-      : document.createElement(type);
-  updateNode(node, {}, props);
+  const node = document.createElementNS(
+    type === 'svg' ? svgNs : parentNode.namespaceURI,
+    /** @type {string} */ (type)
+  );
+  updateNode(node, {}, /** @type {Partial<Element & SharedProps>} */ (props));
   return node;
 };
 
+/**
+ * @param {Element} node
+ * @param {keyof Element} key
+ */
+const isSimpleProperty = (node, key) =>
+  key in node && (node[key] == null || typeof node[key] !== 'object');
+
+/**
+ * @param {CSSStyleDeclaration} style
+ * @param {Partial<CSSStyleDeclaration>} prev
+ * @param {Partial<CSSStyleDeclaration>} next
+ */
+const setStyle = (style, prev, next) => {
+  if (prev) for (const key in prev) if (!(key in next)) style[key] = '';
+  for (const key in next) style[key] = next[key] ?? '';
+};
+
+/**
+ * @template {Element | Text} T
+ * @param {T} node
+ * @param {Partial<T & SharedProps>} prev
+ * @param {Partial<T & SharedProps>} next
+ */
 const updateNode = (node, prev, next) => {
-  if (node.nodeType === Node.TEXT_NODE) {
-    node.nodeValue = next.nodeValue;
+  if (node instanceof Text) {
+    node.nodeValue = /** @type {string} */ (next.nodeValue);
     return;
   }
 
-  const isSvg = node.namespaceURI === svgNs;
+  for (const key in /** @type {T} */ (prev)) {
+    if (key === 'children' || key in next) continue;
 
-  for (const key in prev) {
-    if (key === 'children') continue;
-
-    if (!(key in next)) {
-      if (key === 'ref') prev.ref.current = null;
-      else if (key === 'style') {
-        for (const key in prev.style) node.style[key] = '';
-      } else if (key.startsWith('on')) {
-        node.removeEventListener(key.slice(2).toLowerCase(), prev[key]);
-      } else if (!isSvg && key in node) node[key] = '';
-      else node.removeAttribute(key === 'className' ? 'class' : key);
-    }
+    if (key === 'ref') {
+      if (prev.ref) prev.ref.current = null;
+    } else if (node[key] instanceof CSSStyleDeclaration) {
+      setStyle(
+        /** @type {CSSStyleDeclaration} */ (node[key]),
+        /** @type {CSSStyleDeclaration} */ (prev[key]),
+        {}
+      );
+    } else if (isSimpleProperty(node, /** @type {keyof Element} */ (key))) {
+      /** @type {{ [key: string]: unknown }} */ (/** @type {unknown} */ (node))[
+        key
+      ] = '';
+    } else node.removeAttribute(key);
   }
 
-  for (const key in next) {
-    if (key === 'children') continue;
+  for (const key in /** @type {T} */ (next)) {
+    if (key === 'children' || prev[key] === next[key]) continue;
 
-    if (prev[key] !== next[key]) {
-      if (key === 'ref') {
-        if (prev.ref) prev.ref.current = null;
-        next.ref.current = node;
-      } else if (key === 'style') {
-        if (prev.style) {
-          for (const key in prev.style) {
-            if (!(key in next.style)) node.style[key] = '';
-          }
-        }
-        for (const key in next.style) {
-          let value = next.style[key];
-          if (typeof value === 'number') value += 'px';
-          node.style[key] = next.style[key] ?? '';
-        }
-      } else if (key.startsWith('on')) {
-        if (typeof prev[key] === 'function') {
-          node.removeEventListener(key.slice(2).toLowerCase(), prev[key]);
-        }
-        node.addEventListener(key.slice(2).toLowerCase(), next[key]);
-      } else if (!isSvg && key in node) node[key] = next[key] ?? '';
-      else {
-        const attr = key === 'className' ? 'class' : key;
-        if (next[key] != null) node.setAttribute(attr, next[key]);
-        else node.removeAttribute(attr);
-      }
-    }
+    if (key === 'ref') {
+      if (prev.ref) prev.ref.current = null;
+      if (next.ref) next.ref.current = node;
+    } else if (node[key] instanceof CSSStyleDeclaration) {
+      setStyle(
+        /** @type {CSSStyleDeclaration} */ (node[key]),
+        /** @type {CSSStyleDeclaration} */ (prev[key]),
+        /** @type {CSSStyleDeclaration} */ (next[key])
+      );
+    } else if (isSimpleProperty(node, /** @type {keyof Element} */ (key))) {
+      /** @type {{ [key: string]: unknown }} */ (/** @type {unknown} */ (node))[
+        key
+      ] = next[key] ?? '';
+    } else if (next[key] != null) {
+      node.setAttribute(key, /** @type {string} */ (next[key]));
+    } else node.removeAttribute(key);
   }
 };
 
+/** @param {Vnode} root */
 const remove = root => {
   let vnode = root;
-  let parentNode;
+  /** @type {Element | Text | null} */
+  let parentNode = null;
   while (true) {
     vnode.deleted = true;
     parentNode ??= vnode.node;
     if (vnode.child) vnode = vnode.child;
     else {
-      while (vnode) {
+      while (true) {
         if (vnode.effects) {
           for (const effect of vnode.effects) {
             if (effect.before) {
               effect.before();
-              effect.before = null;
+              effect.before = undefined;
             }
           }
         }
@@ -140,190 +249,162 @@ const remove = root => {
           break;
         }
 
-        vnode = vnode.parent;
+        vnode = /** @type {Vnode} */ (vnode.parent);
       }
     }
   }
 };
 
-const reconcile = (vnode, children) => {
-  const defs = isEmpty(children)
-    ? []
-    : Array.isArray(children)
-      ? children
-      : [children];
-  const parentNode = vnode.node ?? vnode.parentNode;
-  const prevByKey = {};
-  for (
-    let i = 0, prevVnode = vnode.child;
-    prevVnode;
-    ++i, prevVnode = prevVnode.sibling
-  ) {
-    if (prevVnode.beforeUpdates) prevVnode.beforeUpdates.forEach(fn => fn());
-    prevByKey[
-      prevVnode.key == null ? `implicit:${i}` : `explicit:${prevVnode.key}`
-    ] ??= prevVnode;
-  }
-  vnode.child = null;
-
-  for (let i = 0, prevSibling = null; i < defs.length; ++i) {
-    let def = defs[i];
-    if (isEmpty(def)) def = emptyDef;
-    else if (Array.isArray(def)) {
-      def = { type: Fragment, props: { children: def } };
-    } else if (typeof def !== 'object') {
-      def = { type: textType, props: { nodeValue: def } };
-    }
-    const key = def.key == null ? `implicit:${i}` : `explicit:${def.key}`;
-    let childVnode = prevByKey[key];
-    if (childVnode && childVnode.type === def.type) {
-      prevByKey[key] = null;
-      childVnode.parent = vnode;
-      childVnode.parentNode = parentNode;
-      childVnode.sibling = null;
-      if (childVnode.props === def.props) childVnode.shouldUpdate ??= false;
-      if (childVnode.node && childVnode.shouldUpdate !== false) {
-        updateNode(childVnode.node, childVnode.props, def.props);
-      }
-      childVnode.props = def.props;
-    } else {
-      childVnode = {
-        contexts: vnode.contexts,
-        child: null,
-        deleted: false,
-        effects: null,
-        key: def.key,
-        node:
-          typeof def.type === 'function' ? null : createNode(def, parentNode),
-        parent: vnode,
-        parentNode,
-        path: vnode.path.concat(i),
-        props: def.props,
-        queued: false,
-        refs: null,
-        shouldUpdate: null,
-        sibling: null,
-        type: def.type,
-        updated: false
-      };
-    }
-    if (i === 0) vnode.child = childVnode;
-    else prevSibling.sibling = childVnode;
-    prevSibling = childVnode;
-  }
-
-  for (const key in prevByKey) {
-    const vnode = prevByKey[key];
-    if (vnode) remove(vnode);
-  }
-};
-
-const render = (def, node) =>
-  update({ node, path: [], props: { children: def } });
-
-let currentVnode = null;
+let currentVnode = /** @type {Vnode | null} */ (null);
 let effectIndex = 0;
 let refIndex = 0;
 
+/**
+ * @template T
+ * @param {() => T} initial
+ */
 const useRef = initial => {
-  currentVnode.refs ??= [];
-  let ref = currentVnode.refs[refIndex++];
+  const vnode = /** @type {Vnode} */ (currentVnode);
+  vnode.refs ??= [];
+  let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
   if (ref) return ref;
 
-  ref = { current: typeof initial === 'function' ? initial() : initial };
-  currentVnode.refs.push(ref);
+  ref = { current: initial() };
+  vnode.refs.push(ref);
   return ref;
 };
 
 /**
- * @template {unknown} T
- * @param {T | () => T} initial
- * @returns {[T, <S extends T>(value: S | ((previous: T) => S)) => S]}
+ * @template T
+ * @param {(...args: unknown[]) => T} fn
+ * @param {unknown[]} [deps]
  */
-const useState = initial => {
-  const vnode = currentVnode;
-  const { current } = useRef(() => [
-    typeof initial === 'function' ? initial() : initial,
-    value => {
-      if (typeof value === 'function') value = value(current[0]);
+const useMemo = (fn, deps) => {
+  const ref = useRef(() => ({ value: fn(), deps }));
+  if (deps && depsChanged(ref.current.deps, deps)) {
+    ref.current.value = fn();
+    ref.current.deps = deps;
+  }
+  return ref.current.value;
+};
 
-      if (value !== current[0]) {
-        current[0] = value;
+/**
+ * @template T
+ * @param {() => T} getInitialValue
+ */
+const useState = getInitialValue => {
+  const vnode = /** @type {Vnode} */ (currentVnode);
+  /** @type {[T, (getNextValue: (current: T) => T) => T]} */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const state = useMemo(() => [
+    getInitialValue(),
+    getNextValue => {
+      const value = getNextValue(state[0]);
+
+      if (value !== state[0]) {
+        state[0] = value;
         if (currentVnode !== vnode) queueUpdate(vnode);
       }
 
       return value;
     }
   ]);
-  return current;
+  return state;
 };
 
-const depsChanged = (prev, deps) =>
-  !prev ||
-  prev.length !== deps.length ||
-  deps.some((dep, i) => dep !== prev[i]);
+/**
+ * @param {unknown[] | undefined} before
+ * @param {unknown[]} after
+ */
+const depsChanged = (before, after) => {
+  if (!before || before.length !== after.length) return true;
 
+  for (let i = 0; i < before.length; ++i) {
+    if (before[i] !== after[i]) return true;
+  }
+
+  return false;
+};
+
+/**
+ * @param {(
+ *   ...args: unknown[]
+ * ) => ((...args: unknown[]) => void) | undefined} fn
+ * @param {unknown[]} [deps]
+ */
 const useEffect = (fn, deps) => {
-  const vnode = currentVnode;
+  const vnode = /** @type {Vnode} */ (currentVnode);
   vnode.effects ??= [];
   let effect = vnode.effects[effectIndex++];
   if (!effect) {
-    effect = { before: null, after: null, deps: null };
+    effect = { before: undefined, after: undefined, deps: undefined };
     vnode.effects.push(effect);
   }
 
-  if (depsChanged(effect.deps, deps)) {
-    effect.after = () => {
-      effect.before = fn();
-    };
+  if (!deps || depsChanged(effect.deps, deps)) {
+    effect.after = fn;
     effect.deps = deps;
   }
 };
 
-const useMemo = (fn, deps) => {
-  if (!deps) throw new Error('A dependency array must be provided to useMemo');
-
-  const ref = useRef({ value: null, deps });
-
-  if (depsChanged(ref.current.deps, deps)) {
-    ref.current.value = fn();
-    ref.current.deps = deps;
-  }
-  return ref.current;
-};
-
+/**
+ * @template {(...args: unknown[]) => unknown} T
+ * @param {T} fn
+ */
 const useCallback = fn => {
-  const ref = useRef();
-  ref.current = fn;
-  return useRef(
-    () =>
-      (...args) =>
-        ref.current(...args)
-  ).current;
+  const _fn = useMemo(() => fn, [fn]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => /** @type {T} */ ((...args) => _fn(...args)));
 };
 
+/**
+ * @param {{ [key: string]: unknown }} prev
+ * @param {{ [key: string]: unknown }} next
+ */
 const defaultIsEqual = (prev, next) => {
+  if (prev === next) return true;
+
   for (const key in prev) if (prev[key] !== next[key]) return false;
+
   for (const key in next) if (!(key in prev)) return false;
+
   return true;
 };
 
+/**
+ * @template {FunctionComponent} Component
+ * @param {Component} Component
+ * @param {typeof defaultIsEqual} [isEqual]
+ */
 const memo =
   (Component, isEqual = defaultIsEqual) =>
+  /** @param {Props<Component>} props */
   props => {
-    const { current } = useRef({ props: null });
-    if (!current.props || !isEqual(current.props, props)) current.props = props;
-    return jsx(Component, current.props);
+    let [_props, setProps] = useState(() => props);
+    if (!isEqual(props, _props)) _props = setProps(() => props);
+    return jsx(Component, _props);
   };
 
+/** @param {ReturnType<typeof createContext>} Context */
 const useContext = Context => {
-  const vnode = currentVnode;
+  const vnode = /** @type {Vnode} */ (currentVnode);
+
   const context = vnode.contexts?.get(Context);
-  context?.vnodes.add(vnode);
-  useEffect(() => () => context?.vnodes.delete(vnode), []);
+
+  useEffect(() => {
+    if (!context) return;
+
+    context.vnodes.add(vnode);
+    return () => context.vnodes.delete(vnode);
+  }, [context, vnode]);
+
   return context?.value;
 };
 
+/**
+ * @param {Vnode} a
+ * @param {Vnode} b
+ */
 const batchComparator = (a, b) => {
   for (let i = 0; i < a.path.length; ++i) {
     if (i === b.path.length) return 1;
@@ -333,7 +414,10 @@ const batchComparator = (a, b) => {
   return -1;
 };
 
+/** @type {Vnode[]} */
 let updateQueue = [];
+
+/** @param {Vnode} vnode */
 const queueUpdate = vnode => {
   if (vnode.queued) return;
 
@@ -355,22 +439,127 @@ const queueUpdate = vnode => {
   vnode.queued = true;
 };
 
+/**
+ * @param {Pick<
+ *   Vnode,
+ *   | 'contexts'
+ *   | 'key'
+ *   | 'node'
+ *   | 'parent'
+ *   | 'parentNode'
+ *   | 'path'
+ *   | 'props'
+ *   | 'type'
+ * >} options
+ */
+const createVnode = ({
+  contexts,
+  key,
+  node,
+  parent,
+  parentNode,
+  path,
+  props,
+  type
+}) => ({
+  child: null,
+  contexts,
+  deleted: false,
+  effects: null,
+  key,
+  node,
+  parent,
+  parentNode,
+  path,
+  prevSiblingNode: null,
+  props,
+  queued: false,
+  refs: null,
+  shouldUpdate: null,
+  sibling: null,
+  type,
+  updated: false
+});
+
+/** @param {Vnode} parent */
+const reconcile = parent => {
+  const children =
+    typeof parent.type === 'function'
+      ? parent.type(parent.props)
+      : /** @type {{ children: Children }} */ (parent.props).children;
+  const defs = isEmpty(children)
+    ? []
+    : Array.isArray(children)
+      ? children
+      : [children];
+  const parentNode = /** @type {Element} */ (parent.node ?? parent.parentNode);
+  /** @type {{ [key: string]: Vnode | null }} */
+  const prevByKey = {};
+  for (let i = 0, prev = parent.child; prev; ++i, prev = prev.sibling) {
+    prevByKey[prev.key == null ? `i:${i}` : `e:${prev.key}`] ??= prev;
+  }
+  parent.child = null;
+
+  for (
+    let i = 0, prev = /** @type {Vnode | null} */ (null);
+    i < defs.length;
+    ++i
+  ) {
+    const def = isEmpty(defs[i])
+      ? { type: emptyType, props: emptyProps, key: undefined }
+      : Array.isArray(defs[i])
+        ? { type: Fragment, props: { children: defs[i] }, key: undefined }
+        : typeof defs[i] !== 'object'
+          ? { type: textType, props: { nodeValue: defs[i] }, key: undefined }
+          : /** @type {Def} */ (defs[i]);
+    const key = def.key == null ? `i:${i}` : `e:${def.key}`;
+    let child = prevByKey[key];
+    if (child && child.type === def.type) {
+      prevByKey[key] = null;
+      child.parent = parent;
+      child.parentNode = parentNode;
+      child.sibling = null;
+      if (child.props === def.props) child.shouldUpdate ??= false;
+      if (child.node && child.shouldUpdate !== false) {
+        updateNode(child.node, child.props, def.props);
+      }
+      child.props = def.props;
+    } else {
+      child = createVnode({
+        contexts: parent.contexts,
+        key: def.key,
+        node:
+          typeof def.type === 'function' ? null : createNode(def, parentNode),
+        parent,
+        parentNode,
+        path: parent.path.concat(i),
+        props: def.props,
+        type: def.type
+      });
+    }
+    if (prev) prev.sibling = child;
+    else parent.child = child;
+    prev = child;
+  }
+
+  for (const key in prevByKey) {
+    const vnode = prevByKey[key];
+    if (vnode) remove(vnode);
+  }
+};
+
+/** @param {Vnode} root */
 const update = root => {
   let vnode = root;
   const nodeStack = [root.prevSiblingNode ?? null];
   while (true) {
-    vnode.prevSiblingNode = nodeStack.at(-1);
+    vnode.prevSiblingNode = /** @type {Element | Text} */ (nodeStack.at(-1));
     if (vnode.parent) vnode.shouldUpdate ??= vnode.parent.shouldUpdate;
     if (vnode.shouldUpdate !== false) {
       currentVnode = vnode;
       effectIndex = 0;
       refIndex = 0;
-      reconcile(
-        vnode,
-        typeof vnode.type === 'function'
-          ? vnode.type(vnode.props)
-          : vnode.props.children
-      );
+      reconcile(vnode);
       currentVnode = null;
       effectIndex = 0;
       refIndex = 0;
@@ -383,12 +572,12 @@ const update = root => {
       vnode = vnode.child;
     } else {
       vnode.shouldUpdate = null;
-      while (vnode) {
+      while (true) {
         if (vnode.effects) {
           for (const effect of vnode.effects) {
             if (effect.after && effect.before) {
               effect.before();
-              effect.before = null;
+              effect.before = undefined;
             }
           }
         }
@@ -409,8 +598,8 @@ const update = root => {
         if (vnode.effects) {
           for (const effect of vnode.effects) {
             if (effect.after) {
-              effect.after();
-              effect.after = null;
+              effect.before = effect.after();
+              effect.after = undefined;
             }
           }
         }
@@ -422,13 +611,32 @@ const update = root => {
           break;
         }
 
-        vnode = vnode.parent;
+        vnode = /** @type {Vnode} */ (vnode.parent);
         if (vnode.node) nodeStack.pop();
       }
     }
   }
 };
 
+/**
+ * @param {Children} children
+ * @param {Element} node
+ */
+const render = (children, node) =>
+  update(
+    createVnode({
+      contexts: null,
+      key: undefined,
+      node,
+      parent: null,
+      parentNode: null,
+      path: [],
+      props: { children },
+      type: /** @type {Type} */ (node.tagName.toLowerCase())
+    })
+  );
+
+// eslint-disable-next-line import/no-named-export
 export {
   createContext,
   Fragment,
