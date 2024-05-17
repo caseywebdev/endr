@@ -12,7 +12,7 @@ bumpit
 
 version=$(jq -r .version package.json)
 
-git commit -am 'Release $version'
+git commit -am "Release $version"
 git tag -m $version $version
 git push
 git push --tags
