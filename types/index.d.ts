@@ -1,24 +1,29 @@
 export type Child = Def | string | number | boolean | null | undefined;
 export type Children = Child | Child[];
-export type FunctionComponent = (props: {
-    [key: string]: unknown;
-}) => Children;
-export type SharedProps = {
+export type FC<P = {}> = (props: P) => Children;
+export type ElementProps = {
     children?: Children;
     ref?: Ref<unknown>;
     style?: Partial<CSSStyleDeclaration>;
 };
-export type Type = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FunctionComponent;
-export type Props<T extends Type> = T extends FunctionComponent ? Parameters<T>[0] : Partial<SharedProps & (T extends keyof HTMLElementTagNameMap ? Omit<HTMLElementTagNameMap[T], keyof SharedProps> : T extends keyof SVGElementTagNameMap ? Omit<SVGElementTagNameMap[T], keyof SharedProps> : {
+export type Type = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC;
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] : ElementProps & Omit<T extends keyof HTMLElementTagNameMap ? Partial<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? Partial<SVGElementTagNameMap[T]> : {
     [key: string]: unknown;
-})>;
+}, keyof ElementProps>;
 export type Def = {
     type: Type;
-    props: Props<Type>;
+    props: Props;
     key: unknown;
 };
 export type Ref<T> = {
     current: T;
+};
+export type BeforeEffect = (() => void | unknown) | void | undefined;
+export type AfterEffect = () => BeforeEffect;
+export type Effect = {
+    before: BeforeEffect;
+    after: AfterEffect | undefined;
+    deps: unknown[] | undefined;
 };
 export type Vnode = {
     contexts: Map<({ value, children }: {
@@ -30,20 +35,14 @@ export type Vnode = {
     }> | null;
     child: Vnode | null;
     deleted: boolean;
-    effects: null | {
-        before: (() => void) | undefined;
-        after: (() => (() => void) | undefined) | undefined;
-        deps: unknown[] | undefined;
-    }[];
+    effects: Effect[] | null;
     key: unknown;
     node: Element | Text | null;
     parent: Vnode | null;
     parentNode: Element | null;
     path: number[];
     prevSiblingNode: Element | Text | null;
-    props: {
-        [key: string]: unknown;
-    };
+    props: Props;
     queued: boolean;
     refs: Ref<unknown>[] | null;
     shouldUpdate: boolean | null;
@@ -60,36 +59,45 @@ export function Fragment(props: {
 }): Children;
 /** @typedef {Def | string | number | boolean | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: { [key: string]: unknown }) => Children} FunctionComponent */
+/**
+ * @template [P={}] Default is `{}`
+ * @typedef {(props: P) => Children} FC
+ */
 /**
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<unknown>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} SharedProps
+ * }} ElementProps
  */
+/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC} Type */
 /**
- * @typedef {keyof HTMLElementTagNameMap
- *   | keyof SVGElementTagNameMap
- *   | FunctionComponent} Type
- */
-/**
- * @template {Type} T
- * @typedef {T extends FunctionComponent
+ * @template [T=unknown] Default is `unknown`
+ * @typedef {T extends FC
  *   ? Parameters<T>[0]
- *   : Partial<
- *       SharedProps &
- *         (T extends keyof HTMLElementTagNameMap
- *           ? Omit<HTMLElementTagNameMap[T], keyof SharedProps>
+ *   : ElementProps &
+ *       Omit<
+ *         T extends keyof HTMLElementTagNameMap
+ *           ? Partial<HTMLElementTagNameMap[T]>
  *           : T extends keyof SVGElementTagNameMap
- *             ? Omit<SVGElementTagNameMap[T], keyof SharedProps>
- *             : { [key: string]: unknown })
- *     >} Props
+ *             ? Partial<SVGElementTagNameMap[T]>
+ *             : { [key: string]: unknown },
+ *         keyof ElementProps
+ *       >} Props
  */
-/** @typedef {{ type: Type; props: Props<Type>; key: unknown }} Def */
+/** @typedef {{ type: Type; props: Props; key: unknown }} Def */
 /**
  * @template T
  * @typedef {{ current: T }} Ref
+ */
+/** @typedef {(() => void | unknown) | void | undefined} BeforeEffect */
+/** @typedef {() => BeforeEffect} AfterEffect */
+/**
+ * @typedef {{
+ *   before: BeforeEffect;
+ *   after: AfterEffect | undefined;
+ *   deps: unknown[] | undefined;
+ * }} Effect
  */
 /**
  * @typedef {{
@@ -99,20 +107,14 @@ export function Fragment(props: {
  *   > | null;
  *   child: Vnode | null;
  *   deleted: boolean;
- *   effects:
- *     | null
- *     | {
- *         before: (() => void) | undefined;
- *         after: (() => (() => void) | undefined) | undefined;
- *         deps: unknown[] | undefined;
- *       }[];
+ *   effects: Effect[] | null;
  *   key: unknown;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element | null;
  *   path: number[];
  *   prevSiblingNode: Element | Text | null;
- *   props: { [key: string]: unknown };
+ *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
@@ -127,43 +129,52 @@ export function Fragment(props: {
  * @param {Props<T>} props
  * @param {unknown} [key]
  */
-export function jsx<T extends Type>(type: T, props: Props<T>, key?: unknown): {
+export function jsx<T extends Type>(type: T, props?: Props<T>, key?: unknown): {
     type: T;
     props: Props<T>;
     key: unknown;
 };
 /** @typedef {Def | string | number | boolean | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: { [key: string]: unknown }) => Children} FunctionComponent */
+/**
+ * @template [P={}] Default is `{}`
+ * @typedef {(props: P) => Children} FC
+ */
 /**
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<unknown>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} SharedProps
+ * }} ElementProps
  */
+/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC} Type */
 /**
- * @typedef {keyof HTMLElementTagNameMap
- *   | keyof SVGElementTagNameMap
- *   | FunctionComponent} Type
- */
-/**
- * @template {Type} T
- * @typedef {T extends FunctionComponent
+ * @template [T=unknown] Default is `unknown`
+ * @typedef {T extends FC
  *   ? Parameters<T>[0]
- *   : Partial<
- *       SharedProps &
- *         (T extends keyof HTMLElementTagNameMap
- *           ? Omit<HTMLElementTagNameMap[T], keyof SharedProps>
+ *   : ElementProps &
+ *       Omit<
+ *         T extends keyof HTMLElementTagNameMap
+ *           ? Partial<HTMLElementTagNameMap[T]>
  *           : T extends keyof SVGElementTagNameMap
- *             ? Omit<SVGElementTagNameMap[T], keyof SharedProps>
- *             : { [key: string]: unknown })
- *     >} Props
+ *             ? Partial<SVGElementTagNameMap[T]>
+ *             : { [key: string]: unknown },
+ *         keyof ElementProps
+ *       >} Props
  */
-/** @typedef {{ type: Type; props: Props<Type>; key: unknown }} Def */
+/** @typedef {{ type: Type; props: Props; key: unknown }} Def */
 /**
  * @template T
  * @typedef {{ current: T }} Ref
+ */
+/** @typedef {(() => void | unknown) | void | undefined} BeforeEffect */
+/** @typedef {() => BeforeEffect} AfterEffect */
+/**
+ * @typedef {{
+ *   before: BeforeEffect;
+ *   after: AfterEffect | undefined;
+ *   deps: unknown[] | undefined;
+ * }} Effect
  */
 /**
  * @typedef {{
@@ -173,20 +184,14 @@ export function jsx<T extends Type>(type: T, props: Props<T>, key?: unknown): {
  *   > | null;
  *   child: Vnode | null;
  *   deleted: boolean;
- *   effects:
- *     | null
- *     | {
- *         before: (() => void) | undefined;
- *         after: (() => (() => void) | undefined) | undefined;
- *         deps: unknown[] | undefined;
- *       }[];
+ *   effects: Effect[] | null;
  *   key: unknown;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element | null;
  *   path: number[];
  *   prevSiblingNode: Element | Text | null;
- *   props: { [key: string]: unknown };
+ *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
@@ -201,43 +206,52 @@ export function jsx<T extends Type>(type: T, props: Props<T>, key?: unknown): {
  * @param {Props<T>} props
  * @param {unknown} [key]
  */
-export function jsxDEV<T extends Type>(type: T, props: Props<T>, key?: unknown): {
+export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: unknown): {
     type: T;
     props: Props<T>;
     key: unknown;
 };
 /** @typedef {Def | string | number | boolean | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: { [key: string]: unknown }) => Children} FunctionComponent */
+/**
+ * @template [P={}] Default is `{}`
+ * @typedef {(props: P) => Children} FC
+ */
 /**
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<unknown>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} SharedProps
+ * }} ElementProps
  */
+/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC} Type */
 /**
- * @typedef {keyof HTMLElementTagNameMap
- *   | keyof SVGElementTagNameMap
- *   | FunctionComponent} Type
- */
-/**
- * @template {Type} T
- * @typedef {T extends FunctionComponent
+ * @template [T=unknown] Default is `unknown`
+ * @typedef {T extends FC
  *   ? Parameters<T>[0]
- *   : Partial<
- *       SharedProps &
- *         (T extends keyof HTMLElementTagNameMap
- *           ? Omit<HTMLElementTagNameMap[T], keyof SharedProps>
+ *   : ElementProps &
+ *       Omit<
+ *         T extends keyof HTMLElementTagNameMap
+ *           ? Partial<HTMLElementTagNameMap[T]>
  *           : T extends keyof SVGElementTagNameMap
- *             ? Omit<SVGElementTagNameMap[T], keyof SharedProps>
- *             : { [key: string]: unknown })
- *     >} Props
+ *             ? Partial<SVGElementTagNameMap[T]>
+ *             : { [key: string]: unknown },
+ *         keyof ElementProps
+ *       >} Props
  */
-/** @typedef {{ type: Type; props: Props<Type>; key: unknown }} Def */
+/** @typedef {{ type: Type; props: Props; key: unknown }} Def */
 /**
  * @template T
  * @typedef {{ current: T }} Ref
+ */
+/** @typedef {(() => void | unknown) | void | undefined} BeforeEffect */
+/** @typedef {() => BeforeEffect} AfterEffect */
+/**
+ * @typedef {{
+ *   before: BeforeEffect;
+ *   after: AfterEffect | undefined;
+ *   deps: unknown[] | undefined;
+ * }} Effect
  */
 /**
  * @typedef {{
@@ -247,20 +261,14 @@ export function jsxDEV<T extends Type>(type: T, props: Props<T>, key?: unknown):
  *   > | null;
  *   child: Vnode | null;
  *   deleted: boolean;
- *   effects:
- *     | null
- *     | {
- *         before: (() => void) | undefined;
- *         after: (() => (() => void) | undefined) | undefined;
- *         deps: unknown[] | undefined;
- *       }[];
+ *   effects: Effect[] | null;
  *   key: unknown;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element | null;
  *   path: number[];
  *   prevSiblingNode: Element | Text | null;
- *   props: { [key: string]: unknown };
+ *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
@@ -275,43 +283,52 @@ export function jsxDEV<T extends Type>(type: T, props: Props<T>, key?: unknown):
  * @param {Props<T>} props
  * @param {unknown} [key]
  */
-export function jsxs<T extends Type>(type: T, props: Props<T>, key?: unknown): {
+export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: unknown): {
     type: T;
     props: Props<T>;
     key: unknown;
 };
 /** @typedef {Def | string | number | boolean | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: { [key: string]: unknown }) => Children} FunctionComponent */
+/**
+ * @template [P={}] Default is `{}`
+ * @typedef {(props: P) => Children} FC
+ */
 /**
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<unknown>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} SharedProps
+ * }} ElementProps
  */
+/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC} Type */
 /**
- * @typedef {keyof HTMLElementTagNameMap
- *   | keyof SVGElementTagNameMap
- *   | FunctionComponent} Type
- */
-/**
- * @template {Type} T
- * @typedef {T extends FunctionComponent
+ * @template [T=unknown] Default is `unknown`
+ * @typedef {T extends FC
  *   ? Parameters<T>[0]
- *   : Partial<
- *       SharedProps &
- *         (T extends keyof HTMLElementTagNameMap
- *           ? Omit<HTMLElementTagNameMap[T], keyof SharedProps>
+ *   : ElementProps &
+ *       Omit<
+ *         T extends keyof HTMLElementTagNameMap
+ *           ? Partial<HTMLElementTagNameMap[T]>
  *           : T extends keyof SVGElementTagNameMap
- *             ? Omit<SVGElementTagNameMap[T], keyof SharedProps>
- *             : { [key: string]: unknown })
- *     >} Props
+ *             ? Partial<SVGElementTagNameMap[T]>
+ *             : { [key: string]: unknown },
+ *         keyof ElementProps
+ *       >} Props
  */
-/** @typedef {{ type: Type; props: Props<Type>; key: unknown }} Def */
+/** @typedef {{ type: Type; props: Props; key: unknown }} Def */
 /**
  * @template T
  * @typedef {{ current: T }} Ref
+ */
+/** @typedef {(() => void | unknown) | void | undefined} BeforeEffect */
+/** @typedef {() => BeforeEffect} AfterEffect */
+/**
+ * @typedef {{
+ *   before: BeforeEffect;
+ *   after: AfterEffect | undefined;
+ *   deps: unknown[] | undefined;
+ * }} Effect
  */
 /**
  * @typedef {{
@@ -321,20 +338,14 @@ export function jsxs<T extends Type>(type: T, props: Props<T>, key?: unknown): {
  *   > | null;
  *   child: Vnode | null;
  *   deleted: boolean;
- *   effects:
- *     | null
- *     | {
- *         before: (() => void) | undefined;
- *         after: (() => (() => void) | undefined) | undefined;
- *         deps: unknown[] | undefined;
- *       }[];
+ *   effects: Effect[] | null;
  *   key: unknown;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element | null;
  *   path: number[];
  *   prevSiblingNode: Element | Text | null;
- *   props: { [key: string]: unknown };
+ *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
@@ -349,17 +360,17 @@ export function jsxs<T extends Type>(type: T, props: Props<T>, key?: unknown): {
  * @param {Props<T>} props
  * @param {unknown} [key]
  */
-export function jsxsDEV<T extends Type>(type: T, props: Props<T>, key?: unknown): {
+export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: unknown): {
     type: T;
     props: Props<T>;
     key: unknown;
 };
 /**
- * @template {FunctionComponent} Component
+ * @template {FC} Component
  * @param {Component} Component
  * @param {typeof defaultIsEqual} [isEqual]
  */
-export function memo<Component extends FunctionComponent>(Component: Component, isEqual?: typeof defaultIsEqual): (props: Props<Component>) => {
+export function memo<Component extends FC<{}>>(Component: Component, isEqual?: typeof defaultIsEqual): (props: Props<Component>) => {
     type: Component;
     props: Props<Component>;
     key: unknown;
@@ -377,12 +388,10 @@ export function useCallback<T extends (...args: unknown[]) => unknown>(fn: T): T
 /** @param {ReturnType<typeof createContext>} Context */
 export function useContext(Context: ReturnType<typeof createContext>): any;
 /**
- * @param {(
- *   ...args: unknown[]
- * ) => ((...args: unknown[]) => void) | undefined} fn
+ * @param {AfterEffect} fn
  * @param {unknown[]} [deps]
  */
-export function useEffect(fn: (...args: unknown[]) => ((...args: unknown[]) => void) | undefined, deps?: unknown[]): void;
+export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
 /**
  * @template T
  * @param {(...args: unknown[]) => T} fn
@@ -391,14 +400,14 @@ export function useEffect(fn: (...args: unknown[]) => ((...args: unknown[]) => v
 export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
 /**
  * @template T
- * @param {() => T} initial
+ * @param {T} initial
  */
-export function useRef<T>(initial: () => T): Ref<T>;
+export function useRef<T>(initial: T): Ref<T>;
 /**
  * @template T
- * @param {() => T} getInitialValue
+ * @param {T} initial
  */
-export function useState<T>(getInitialValue: () => T): [T, (getNextValue: (current: T) => T) => T];
+export function useState<T>(initial: T): [T, (next: T | ((current: T) => T)) => T];
 /**
  * @param {{ [key: string]: unknown }} prev
  * @param {{ [key: string]: unknown }} next

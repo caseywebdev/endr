@@ -5,41 +5,53 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
 
 /** @typedef {Child | Child[]} Children */
 
-/** @typedef {(props: { [key: string]: unknown }) => Children} FunctionComponent */
+/**
+ * @template [P={}] Default is `{}`
+ * @typedef {(props: P) => Children} FC
+ */
 
 /**
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<unknown>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} SharedProps
+ * }} ElementProps
  */
 
-/**
- * @typedef {keyof HTMLElementTagNameMap
- *   | keyof SVGElementTagNameMap
- *   | FunctionComponent} Type
- */
+/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC} Type */
 
 /**
- * @template {Type} T
- * @typedef {T extends FunctionComponent
+ * @template [T=unknown] Default is `unknown`
+ * @typedef {T extends FC
  *   ? Parameters<T>[0]
- *   : Partial<
- *       SharedProps &
- *         (T extends keyof HTMLElementTagNameMap
- *           ? Omit<HTMLElementTagNameMap[T], keyof SharedProps>
+ *   : ElementProps &
+ *       Omit<
+ *         T extends keyof HTMLElementTagNameMap
+ *           ? Partial<HTMLElementTagNameMap[T]>
  *           : T extends keyof SVGElementTagNameMap
- *             ? Omit<SVGElementTagNameMap[T], keyof SharedProps>
- *             : { [key: string]: unknown })
- *     >} Props
+ *             ? Partial<SVGElementTagNameMap[T]>
+ *             : { [key: string]: unknown },
+ *         keyof ElementProps
+ *       >} Props
  */
 
-/** @typedef {{ type: Type; props: Props<Type>; key: unknown }} Def */
+/** @typedef {{ type: Type; props: Props; key: unknown }} Def */
 
 /**
  * @template T
  * @typedef {{ current: T }} Ref
+ */
+
+/** @typedef {(() => void | unknown) | void | undefined} BeforeEffect */
+
+/** @typedef {() => BeforeEffect} AfterEffect */
+
+/**
+ * @typedef {{
+ *   before: BeforeEffect;
+ *   after: AfterEffect | undefined;
+ *   deps: unknown[] | undefined;
+ * }} Effect
  */
 
 /**
@@ -50,20 +62,14 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *   > | null;
  *   child: Vnode | null;
  *   deleted: boolean;
- *   effects:
- *     | null
- *     | {
- *         before: (() => void) | undefined;
- *         after: (() => (() => void) | undefined) | undefined;
- *         deps: unknown[] | undefined;
- *       }[];
+ *   effects: Effect[] | null;
  *   key: unknown;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element | null;
  *   path: number[];
  *   prevSiblingNode: Element | Text | null;
- *   props: { [key: string]: unknown };
+ *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
@@ -79,7 +85,11 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  * @param {Props<T>} props
  * @param {unknown} [key]
  */
-const jsx = (type, props, key) => ({ type, props, key });
+const jsx = (type, props = /** @type {Props<T>} */ (emptyProps), key) => ({
+  type,
+  props,
+  key
+});
 
 const jsxs = jsx;
 
@@ -121,6 +131,8 @@ const emptyProps = /** @type {{ [k: string]: unknown }} */ ({});
 
 const emptyType = /** @type {Type} */ ({});
 
+const emptyDef = { type: emptyType, props: emptyProps, key: undefined };
+
 const textType = /** @type {Type} */ ({});
 
 const svgNs = 'http://www.w3.org/2000/svg';
@@ -144,7 +156,7 @@ const createNode = (def, parentNode) => {
     type === 'svg' ? svgNs : parentNode.namespaceURI,
     /** @type {string} */ (type)
   );
-  updateNode(node, {}, /** @type {Partial<Element & SharedProps>} */ (props));
+  updateNode(node, {}, /** @type {Partial<Element & ElementProps>} */ (props));
   return node;
 };
 
@@ -168,8 +180,8 @@ const setStyle = (style, prev, next) => {
 /**
  * @template {Element | Text} T
  * @param {T} node
- * @param {Partial<T & SharedProps>} prev
- * @param {Partial<T & SharedProps>} next
+ * @param {Partial<T & ElementProps>} prev
+ * @param {Partial<T & ElementProps>} next
  */
 const updateNode = (node, prev, next) => {
   if (node instanceof Text) {
@@ -261,7 +273,7 @@ let refIndex = 0;
 
 /**
  * @template T
- * @param {() => T} initial
+ * @param {T} initial
  */
 const useRef = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
@@ -269,9 +281,28 @@ const useRef = initial => {
   let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
   if (ref) return ref;
 
-  ref = { current: initial() };
+  ref = { current: initial };
   vnode.refs.push(ref);
   return ref;
+};
+
+/**
+ * @param {AfterEffect} fn
+ * @param {unknown[]} [deps]
+ */
+const useEffect = (fn, deps) => {
+  const vnode = /** @type {Vnode} */ (currentVnode);
+  vnode.effects ??= [];
+  let effect = vnode.effects[effectIndex++];
+  if (!effect) {
+    effect = { before: undefined, after: undefined, deps: undefined };
+    vnode.effects.push(effect);
+  }
+
+  if (!deps || depsChanged(effect.deps, deps)) {
+    effect.after = fn;
+    effect.deps = deps;
+  }
 };
 
 /**
@@ -280,8 +311,13 @@ const useRef = initial => {
  * @param {unknown[]} [deps]
  */
 const useMemo = (fn, deps) => {
-  const ref = useRef(() => ({ value: fn(), deps }));
-  if (deps && depsChanged(ref.current.deps, deps)) {
+  const ref = useRef(
+    /** @type {{ value: T; deps?: unknown[] }} */ (
+      /** @type {unknown} */ (null)
+    )
+  );
+  if (!ref.current) ref.current = { value: fn(), deps };
+  else if (deps && depsChanged(ref.current.deps, deps)) {
     ref.current.value = fn();
     ref.current.deps = deps;
   }
@@ -290,22 +326,20 @@ const useMemo = (fn, deps) => {
 
 /**
  * @template T
- * @param {() => T} getInitialValue
+ * @param {T} initial
  */
-const useState = getInitialValue => {
+const useState = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
-  /** @type {[T, (getNextValue: (current: T) => T) => T]} */
+  /** @type {[T, (next: T | ((current: T) => T)) => T]} */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const state = useMemo(() => [
-    getInitialValue(),
-    getNextValue => {
-      const value = getNextValue(state[0]);
+    initial,
+    next => {
+      const value = next instanceof Function ? next(state[0]) : next;
+      if (value === state[0]) return value;
 
-      if (value !== state[0]) {
-        state[0] = value;
-        if (currentVnode !== vnode) queueUpdate(vnode);
-      }
-
+      state[0] = value;
+      if (currentVnode !== vnode) queueUpdate(vnode);
       return value;
     }
   ]);
@@ -324,27 +358,6 @@ const depsChanged = (before, after) => {
   }
 
   return false;
-};
-
-/**
- * @param {(
- *   ...args: unknown[]
- * ) => ((...args: unknown[]) => void) | undefined} fn
- * @param {unknown[]} [deps]
- */
-const useEffect = (fn, deps) => {
-  const vnode = /** @type {Vnode} */ (currentVnode);
-  vnode.effects ??= [];
-  let effect = vnode.effects[effectIndex++];
-  if (!effect) {
-    effect = { before: undefined, after: undefined, deps: undefined };
-    vnode.effects.push(effect);
-  }
-
-  if (!deps || depsChanged(effect.deps, deps)) {
-    effect.after = fn;
-    effect.deps = deps;
-  }
 };
 
 /**
@@ -372,7 +385,7 @@ const defaultIsEqual = (prev, next) => {
 };
 
 /**
- * @template {FunctionComponent} Component
+ * @template {FC} Component
  * @param {Component} Component
  * @param {typeof defaultIsEqual} [isEqual]
  */
@@ -380,8 +393,8 @@ const memo =
   (Component, isEqual = defaultIsEqual) =>
   /** @param {Props<Component>} props */
   props => {
-    let [_props, setProps] = useState(() => props);
-    if (!isEqual(props, _props)) _props = setProps(() => props);
+    let [_props, setProps] = useState(props);
+    if (!isEqual(props, _props)) _props = setProps(props);
     return jsx(Component, _props);
   };
 
@@ -486,7 +499,7 @@ const reconcile = parent => {
   const children =
     typeof parent.type === 'function'
       ? parent.type(parent.props)
-      : /** @type {{ children: Children }} */ (parent.props).children;
+      : /** @type {Children} */ (parent.props.children);
   const defs = isEmpty(children)
     ? []
     : Array.isArray(children)
@@ -496,7 +509,7 @@ const reconcile = parent => {
   /** @type {{ [key: string]: Vnode | null }} */
   const prevByKey = {};
   for (let i = 0, prev = parent.child; prev; ++i, prev = prev.sibling) {
-    prevByKey[prev.key == null ? `i:${i}` : `e:${prev.key}`] ??= prev;
+    prevByKey[prev.key == null ? `-${i}` : `+${prev.key}`] ??= prev;
   }
   parent.child = null;
 
@@ -506,13 +519,13 @@ const reconcile = parent => {
     ++i
   ) {
     const def = isEmpty(defs[i])
-      ? { type: emptyType, props: emptyProps, key: undefined }
+      ? emptyDef
       : Array.isArray(defs[i])
         ? { type: Fragment, props: { children: defs[i] }, key: undefined }
         : typeof defs[i] !== 'object'
           ? { type: textType, props: { nodeValue: defs[i] }, key: undefined }
           : /** @type {Def} */ (defs[i]);
-    const key = def.key == null ? `i:${i}` : `e:${def.key}`;
+    const key = def.key == null ? `-${i}` : `+${def.key}`;
     let child = prevByKey[key];
     if (child && child.type === def.type) {
       prevByKey[key] = null;
