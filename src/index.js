@@ -1,14 +1,11 @@
 const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
   globalThis;
 
-/** @typedef {Def | string | number | boolean | null | undefined} Child */
+/** @typedef {Def | string | number | false | null | undefined} Child */
 
 /** @typedef {Child | Child[]} Children */
 
-/**
- * @template [P={}] Default is `{}`
- * @typedef {(props: P) => Children} FC
- */
+/** @typedef {(props: any) => Children} FC */
 
 /**
  * @typedef {{
@@ -23,7 +20,9 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
- *   ? Parameters<T>[0]
+ *   ? Parameters<T>[0] extends undefined
+ *     ? {}
+ *     : Parameters<T>[0]
  *   : ElementProps &
  *       Omit<
  *         T extends keyof HTMLElementTagNameMap
@@ -127,7 +126,7 @@ const createContext = () => {
 /** @param {unknown} value */
 const isEmpty = value => value == null || value === false || value === '';
 
-const emptyProps = /** @type {{ [k: string]: unknown }} */ ({});
+const emptyProps = /** @type {const} */ ({});
 
 const emptyType = /** @type {Type} */ ({});
 
@@ -279,10 +278,10 @@ const useRef = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   vnode.refs ??= [];
   let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
-  if (ref) return ref;
-
-  ref = { current: initial };
-  vnode.refs.push(ref);
+  if (!ref) {
+    ref = { current: initial };
+    vnode.refs.push(ref);
+  }
   return ref;
 };
 
@@ -293,13 +292,9 @@ const useRef = initial => {
 const useEffect = (fn, deps) => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   vnode.effects ??= [];
-  let effect = vnode.effects[effectIndex++];
-  if (!effect) {
-    effect = { before: undefined, after: undefined, deps: undefined };
-    vnode.effects.push(effect);
-  }
-
-  if (!deps || depsChanged(effect.deps, deps)) {
+  const effect = vnode.effects[effectIndex++];
+  if (!effect) vnode.effects.push({ before: undefined, after: fn, deps });
+  else if (!deps || depsChanged(effect.deps, deps)) {
     effect.after = fn;
     effect.deps = deps;
   }

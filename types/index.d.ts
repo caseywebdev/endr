@@ -1,13 +1,13 @@
-export type Child = Def | string | number | boolean | null | undefined;
+export type Child = Def | string | number | false | null | undefined;
 export type Children = Child | Child[];
-export type FC<P = {}> = (props: P) => Children;
+export type FC = (props: any) => Children;
 export type ElementProps = {
     children?: Children;
     ref?: Ref<unknown>;
     style?: Partial<CSSStyleDeclaration>;
 };
 export type Type = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC;
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] : ElementProps & Omit<T extends keyof HTMLElementTagNameMap ? Partial<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? Partial<SVGElementTagNameMap[T]> : {
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : ElementProps & Omit<T extends keyof HTMLElementTagNameMap ? Partial<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? Partial<SVGElementTagNameMap[T]> : {
     [key: string]: unknown;
 }, keyof ElementProps>;
 export type Def = {
@@ -57,12 +57,9 @@ export function createContext(): ({ value, children }: {
 export function Fragment(props: {
     children?: Children;
 }): Children;
-/** @typedef {Def | string | number | boolean | null | undefined} Child */
+/** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/**
- * @template [P={}] Default is `{}`
- * @typedef {(props: P) => Children} FC
- */
+/** @typedef {(props: any) => Children} FC */
 /**
  * @typedef {{
  *   children?: Children;
@@ -74,7 +71,9 @@ export function Fragment(props: {
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
- *   ? Parameters<T>[0]
+ *   ? Parameters<T>[0] extends undefined
+ *     ? {}
+ *     : Parameters<T>[0]
  *   : ElementProps &
  *       Omit<
  *         T extends keyof HTMLElementTagNameMap
@@ -134,12 +133,9 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: unknown): {
     props: Props<T>;
     key: unknown;
 };
-/** @typedef {Def | string | number | boolean | null | undefined} Child */
+/** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/**
- * @template [P={}] Default is `{}`
- * @typedef {(props: P) => Children} FC
- */
+/** @typedef {(props: any) => Children} FC */
 /**
  * @typedef {{
  *   children?: Children;
@@ -151,7 +147,9 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: unknown): {
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
- *   ? Parameters<T>[0]
+ *   ? Parameters<T>[0] extends undefined
+ *     ? {}
+ *     : Parameters<T>[0]
  *   : ElementProps &
  *       Omit<
  *         T extends keyof HTMLElementTagNameMap
@@ -211,12 +209,9 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: unknown)
     props: Props<T>;
     key: unknown;
 };
-/** @typedef {Def | string | number | boolean | null | undefined} Child */
+/** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/**
- * @template [P={}] Default is `{}`
- * @typedef {(props: P) => Children} FC
- */
+/** @typedef {(props: any) => Children} FC */
 /**
  * @typedef {{
  *   children?: Children;
@@ -228,7 +223,9 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: unknown)
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
- *   ? Parameters<T>[0]
+ *   ? Parameters<T>[0] extends undefined
+ *     ? {}
+ *     : Parameters<T>[0]
  *   : ElementProps &
  *       Omit<
  *         T extends keyof HTMLElementTagNameMap
@@ -288,12 +285,9 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: unknown): 
     props: Props<T>;
     key: unknown;
 };
-/** @typedef {Def | string | number | boolean | null | undefined} Child */
+/** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/**
- * @template [P={}] Default is `{}`
- * @typedef {(props: P) => Children} FC
- */
+/** @typedef {(props: any) => Children} FC */
 /**
  * @typedef {{
  *   children?: Children;
@@ -305,7 +299,9 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: unknown): 
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
- *   ? Parameters<T>[0]
+ *   ? Parameters<T>[0] extends undefined
+ *     ? {}
+ *     : Parameters<T>[0]
  *   : ElementProps &
  *       Omit<
  *         T extends keyof HTMLElementTagNameMap
@@ -370,7 +366,7 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: unknown
  * @param {Component} Component
  * @param {typeof defaultIsEqual} [isEqual]
  */
-export function memo<Component extends FC<{}>>(Component: Component, isEqual?: typeof defaultIsEqual): (props: Props<Component>) => {
+export function memo<Component extends FC>(Component: Component, isEqual?: typeof defaultIsEqual): (props: Props<Component>) => {
     type: Component;
     props: Props<Component>;
     key: unknown;
