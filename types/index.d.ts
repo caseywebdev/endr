@@ -8,12 +8,16 @@ export type SharedElementProps<T = unknown> = {
     ref?: Ref<T | null>;
     style?: Partial<CSSStyleDeclaration>;
 };
-export type HTMLElementProps<T extends HTMLElement> = SharedElementProps<T> & { [key in keyof T]?: key extends keyof SharedElementProps<T> ? SharedElementProps<T>[key] : T[key]; };
-export type SVGElementProps<T extends SVGElement> = SharedElementProps<T> & { [key in keyof T]?: key extends keyof SharedElementProps<T> ? SharedElementProps<T>[key] : (() => any) extends T[key] ? T[key] : string; };
-export type UnkonwnElementProps = SharedElementProps & {
+export type HTMLElementProps<T extends HTMLElement> = SharedElementProps<T> & { [key in keyof T]?: key extends keyof SharedElementProps<T> ? SharedElementProps<T>[key] : T[key]; } & {
+    [x: `data-${string}`]: unknown;
+};
+export type SVGElementProps<T extends SVGElement> = SharedElementProps<T> & { [key in keyof T]?: key extends keyof SharedElementProps<T> ? SharedElementProps<T>[key] : (() => any) extends T[key] ? T[key] : unknown; } & {
     [key: string]: unknown;
 };
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? HTMLElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? SVGElementProps<SVGElementTagNameMap[T]> : UnkonwnElementProps;
+export type UnknownElementProps = SharedElementProps & {
+    [key: string]: unknown;
+};
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? HTMLElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? SVGElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
 export type Key = string | number | boolean | undefined;
 export type Def = {
     type: Type;
@@ -81,7 +85,7 @@ export function Fragment(props: {
  *   [key in keyof T]?: key extends keyof SharedElementProps<T>
  *     ? SharedElementProps<T>[key]
  *     : T[key];
- * }} HTMLElementProps
+ * } & { [key in `data-${string}`]: unknown }} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
@@ -90,10 +94,10 @@ export function Fragment(props: {
  *     ? SharedElementProps<T>[key]
  *     : (() => any) extends T[key]
  *       ? T[key]
- *       : string;
- * }} SVGElementProps
+ *       : unknown;
+ * } & { [key: string]: unknown }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -104,7 +108,7 @@ export function Fragment(props: {
  *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
  *     : T extends keyof SVGElementTagNameMap
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
- *       : UnkonwnElementProps} Props
+ *       : UnknownElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
@@ -175,7 +179,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   [key in keyof T]?: key extends keyof SharedElementProps<T>
  *     ? SharedElementProps<T>[key]
  *     : T[key];
- * }} HTMLElementProps
+ * } & { [key in `data-${string}`]: unknown }} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
@@ -184,10 +188,10 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *     ? SharedElementProps<T>[key]
  *     : (() => any) extends T[key]
  *       ? T[key]
- *       : string;
- * }} SVGElementProps
+ *       : unknown;
+ * } & { [key: string]: unknown }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -198,7 +202,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
  *     : T extends keyof SVGElementTagNameMap
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
- *       : UnkonwnElementProps} Props
+ *       : UnknownElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
@@ -269,7 +273,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   [key in keyof T]?: key extends keyof SharedElementProps<T>
  *     ? SharedElementProps<T>[key]
  *     : T[key];
- * }} HTMLElementProps
+ * } & { [key in `data-${string}`]: unknown }} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
@@ -278,10 +282,10 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *     ? SharedElementProps<T>[key]
  *     : (() => any) extends T[key]
  *       ? T[key]
- *       : string;
- * }} SVGElementProps
+ *       : unknown;
+ * } & { [key: string]: unknown }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -292,7 +296,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
  *     : T extends keyof SVGElementTagNameMap
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
- *       : UnkonwnElementProps} Props
+ *       : UnknownElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
@@ -363,7 +367,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   [key in keyof T]?: key extends keyof SharedElementProps<T>
  *     ? SharedElementProps<T>[key]
  *     : T[key];
- * }} HTMLElementProps
+ * } & { [key in `data-${string}`]: unknown }} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
@@ -372,10 +376,10 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *     ? SharedElementProps<T>[key]
  *     : (() => any) extends T[key]
  *       ? T[key]
- *       : string;
- * }} SVGElementProps
+ *       : unknown;
+ * } & { [key: string]: unknown }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -386,7 +390,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
  *     : T extends keyof SVGElementTagNameMap
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
- *       : UnkonwnElementProps} Props
+ *       : UnknownElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
