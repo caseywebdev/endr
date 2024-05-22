@@ -11,7 +11,7 @@ export type ElementProps = {
 export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : ElementProps & (T extends keyof HTMLElementTagNameMap ? { -readonly [K in keyof Omit<HTMLElementTagNameMap[T], keyof ElementProps>]?: HTMLElementTagNameMap[T][K]; } : T extends keyof SVGElementTagNameMap ? { -readonly [K_1 in keyof Omit<SVGElementTagNameMap[T], keyof ElementProps>]?: SVGElementTagNameMap[T][K_1]; } : {
     [key: string]: unknown;
 });
-export type Key = string | undefined;
+export type Key = string | number | boolean | undefined;
 export type Def = {
     type: Type;
     props: Props;
@@ -94,7 +94,7 @@ export function Fragment(props: {
  *             }
  *           : { [key: string]: unknown })} Props
  */
-/** @typedef {string | undefined} Key */
+/** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -142,7 +142,7 @@ export function Fragment(props: {
 export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: string;
+    key: Key;
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
@@ -179,7 +179,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *             }
  *           : { [key: string]: unknown })} Props
  */
-/** @typedef {string | undefined} Key */
+/** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -227,7 +227,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: string;
+    key: Key;
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
@@ -264,7 +264,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *             }
  *           : { [key: string]: unknown })} Props
  */
-/** @typedef {string | undefined} Key */
+/** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -312,7 +312,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: string;
+    key: Key;
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
@@ -349,7 +349,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *             }
  *           : { [key: string]: unknown })} Props
  */
-/** @typedef {string | undefined} Key */
+/** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -397,7 +397,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: string;
+    key: Key;
 };
 /**
  * @template {FC} Component
@@ -407,7 +407,7 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function memo<Component extends FC>(Component: Component, isEqual?: typeof defaultIsEqual): (props: Props<Component>) => {
     type: Component;
     props: Props<Component>;
-    key: string;
+    key: Key;
 };
 /**
  * @param {Children} children

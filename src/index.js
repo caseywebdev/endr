@@ -43,7 +43,7 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *           : { [key: string]: unknown })} Props
  */
 
-/** @typedef {string | undefined} Key */
+/** @typedef {string | number | boolean | undefined} Key */
 
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 

@@ -1,4 +1,4 @@
-import { Key, Props, TagName } from './index.d';
+import type { Key, Props, TagName } from './index.d.ts';
 
 export namespace JSX {
   type IntrinsicAttributes = {
