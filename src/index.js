@@ -26,7 +26,7 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *   [key in keyof T]?: key extends keyof SharedElementProps<T>
  *     ? SharedElementProps<T>[key]
  *     : T[key];
- * } & { [key in `data-${string}`]: string }} HTMLElementProps
+ * } & { [key in `data-${string}`]?: string | null }} HTMLElementProps
  */
 
 /**
@@ -36,8 +36,8 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *     ? SharedElementProps<T>[key]
  *     : (() => any) extends T[key]
  *       ? T[key]
- *       : string;
- * } & { [key: string]: string }} SVGElementProps
+ *       : string | null;
+ * } & { [key in string]?: string | null }} SVGElementProps
  */
 
 /** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
