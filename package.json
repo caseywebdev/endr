@@ -1,7 +1,7 @@
 {
   "name": "endr",
   "type": "module",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "repository": {
@@ -14,11 +14,11 @@
       "default": "./src/index.js"
     },
     "./jsx-dev-runtime": {
-      "types": "./types/index.d.ts",
+      "types": "./types/jsx.d.ts",
       "default": "./src/index.js"
     },
     "./jsx-runtime": {
-      "types": "./types/index.d.ts",
+      "types": "./types/jsx.d.ts",
       "default": "./src/index.js"
     }
   },

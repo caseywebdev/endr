@@ -7,6 +7,10 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
 
 /** @typedef {(props: any) => Children} FC */
 
+/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
+
+/** @typedef {TagName | FC} Type */
+
 /**
  * @typedef {{
  *   children?: Children;
@@ -15,8 +19,6 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  * }} ElementProps
  */
 
-/** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | FC} Type */
-
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -24,17 +26,26 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *     ? {}
  *     : Parameters<T>[0]
  *   : ElementProps &
- *       Omit<
- *         T extends keyof HTMLElementTagNameMap
- *           ? Partial<HTMLElementTagNameMap[T]>
- *           : T extends keyof SVGElementTagNameMap
- *             ? Partial<SVGElementTagNameMap[T]>
- *             : { [key: string]: unknown },
- *         keyof ElementProps
- *       >} Props
+ *       (T extends keyof HTMLElementTagNameMap
+ *         ? {
+ *             -readonly [K in keyof Omit<
+ *               HTMLElementTagNameMap[T],
+ *               keyof ElementProps
+ *             >]?: HTMLElementTagNameMap[T][K];
+ *           }
+ *         : T extends keyof SVGElementTagNameMap
+ *           ? {
+ *               -readonly [K in keyof Omit<
+ *                 SVGElementTagNameMap[T],
+ *                 keyof ElementProps
+ *               >]?: SVGElementTagNameMap[T][K];
+ *             }
+ *           : { [key: string]: unknown })} Props
  */
 
-/** @typedef {{ type: Type; props: Props; key: unknown }} Def */
+/** @typedef {string | undefined} Key */
+
+/** @typedef {{ type: Type; props: Props; key: Key }} Def */
 
 /**
  * @template T
@@ -62,7 +73,7 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *   child: Vnode | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
- *   key: unknown;
+ *   key: Key;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element | null;
@@ -82,7 +93,7 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  * @template {Type} T
  * @param {T} type
  * @param {Props<T>} props
- * @param {unknown} [key]
+ * @param {Key} [key]
  */
 const jsx = (type, props = /** @type {Props<T>} */ (emptyProps), key) => ({
   type,
