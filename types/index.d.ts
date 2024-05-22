@@ -3,14 +3,17 @@ export type Children = Child | Child[];
 export type FC = (props: any) => Children;
 export type TagName = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap;
 export type Type = TagName | FC;
-export type ElementProps = {
+export type SharedElementProps<T = unknown> = {
     children?: Children;
-    ref?: Ref<unknown>;
+    ref?: Ref<T | null>;
     style?: Partial<CSSStyleDeclaration>;
 };
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : ElementProps & (T extends keyof HTMLElementTagNameMap ? { -readonly [K in keyof Omit<HTMLElementTagNameMap[T], keyof ElementProps>]?: HTMLElementTagNameMap[T][K]; } : T extends keyof SVGElementTagNameMap ? { -readonly [K_1 in keyof Omit<SVGElementTagNameMap[T], keyof ElementProps>]?: SVGElementTagNameMap[T][K_1]; } : {
+export type HTMLElementProps<T extends HTMLElement> = SharedElementProps<T> & { [key in keyof T]?: key extends keyof SharedElementProps<T> ? SharedElementProps<T>[key] : T[key]; };
+export type SVGElementProps<T extends SVGElement> = SharedElementProps<T> & { [key in keyof T]?: key extends keyof SharedElementProps<T> ? SharedElementProps<T>[key] : (() => any) extends T[key] ? T[key] : string; };
+export type UnkonwnElementProps = SharedElementProps & {
     [key: string]: unknown;
-});
+};
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? HTMLElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? SVGElementProps<SVGElementTagNameMap[T]> : UnkonwnElementProps;
 export type Key = string | number | boolean | undefined;
 export type Def = {
     type: Type;
@@ -65,34 +68,43 @@ export function Fragment(props: {
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
+ * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   ref?: Ref<unknown>;
+ *   ref?: Ref<T | null>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} ElementProps
+ * }} SharedElementProps
  */
+/**
+ * @template {HTMLElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : T[key];
+ * }} HTMLElementProps
+ */
+/**
+ * @template {SVGElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : (() => any) extends T[key]
+ *       ? T[key]
+ *       : string;
+ * }} SVGElementProps
+ */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
  *   ? Parameters<T>[0] extends undefined
  *     ? {}
  *     : Parameters<T>[0]
- *   : ElementProps &
- *       (T extends keyof HTMLElementTagNameMap
- *         ? {
- *             -readonly [K in keyof Omit<
- *               HTMLElementTagNameMap[T],
- *               keyof ElementProps
- *             >]?: HTMLElementTagNameMap[T][K];
- *           }
- *         : T extends keyof SVGElementTagNameMap
- *           ? {
- *               -readonly [K in keyof Omit<
- *                 SVGElementTagNameMap[T],
- *                 keyof ElementProps
- *               >]?: SVGElementTagNameMap[T][K];
- *             }
- *           : { [key: string]: unknown })} Props
+ *   : T extends keyof HTMLElementTagNameMap
+ *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
+ *     : T extends keyof SVGElementTagNameMap
+ *       ? SVGElementProps<SVGElementTagNameMap[T]>
+ *       : UnkonwnElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
@@ -150,34 +162,43 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
+ * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   ref?: Ref<unknown>;
+ *   ref?: Ref<T | null>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} ElementProps
+ * }} SharedElementProps
  */
+/**
+ * @template {HTMLElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : T[key];
+ * }} HTMLElementProps
+ */
+/**
+ * @template {SVGElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : (() => any) extends T[key]
+ *       ? T[key]
+ *       : string;
+ * }} SVGElementProps
+ */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
  *   ? Parameters<T>[0] extends undefined
  *     ? {}
  *     : Parameters<T>[0]
- *   : ElementProps &
- *       (T extends keyof HTMLElementTagNameMap
- *         ? {
- *             -readonly [K in keyof Omit<
- *               HTMLElementTagNameMap[T],
- *               keyof ElementProps
- *             >]?: HTMLElementTagNameMap[T][K];
- *           }
- *         : T extends keyof SVGElementTagNameMap
- *           ? {
- *               -readonly [K in keyof Omit<
- *                 SVGElementTagNameMap[T],
- *                 keyof ElementProps
- *               >]?: SVGElementTagNameMap[T][K];
- *             }
- *           : { [key: string]: unknown })} Props
+ *   : T extends keyof HTMLElementTagNameMap
+ *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
+ *     : T extends keyof SVGElementTagNameMap
+ *       ? SVGElementProps<SVGElementTagNameMap[T]>
+ *       : UnkonwnElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
@@ -235,34 +256,43 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
+ * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   ref?: Ref<unknown>;
+ *   ref?: Ref<T | null>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} ElementProps
+ * }} SharedElementProps
  */
+/**
+ * @template {HTMLElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : T[key];
+ * }} HTMLElementProps
+ */
+/**
+ * @template {SVGElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : (() => any) extends T[key]
+ *       ? T[key]
+ *       : string;
+ * }} SVGElementProps
+ */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
  *   ? Parameters<T>[0] extends undefined
  *     ? {}
  *     : Parameters<T>[0]
- *   : ElementProps &
- *       (T extends keyof HTMLElementTagNameMap
- *         ? {
- *             -readonly [K in keyof Omit<
- *               HTMLElementTagNameMap[T],
- *               keyof ElementProps
- *             >]?: HTMLElementTagNameMap[T][K];
- *           }
- *         : T extends keyof SVGElementTagNameMap
- *           ? {
- *               -readonly [K in keyof Omit<
- *                 SVGElementTagNameMap[T],
- *                 keyof ElementProps
- *               >]?: SVGElementTagNameMap[T][K];
- *             }
- *           : { [key: string]: unknown })} Props
+ *   : T extends keyof HTMLElementTagNameMap
+ *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
+ *     : T extends keyof SVGElementTagNameMap
+ *       ? SVGElementProps<SVGElementTagNameMap[T]>
+ *       : UnkonwnElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
@@ -320,34 +350,43 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
+ * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   ref?: Ref<unknown>;
+ *   ref?: Ref<T | null>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} ElementProps
+ * }} SharedElementProps
  */
+/**
+ * @template {HTMLElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : T[key];
+ * }} HTMLElementProps
+ */
+/**
+ * @template {SVGElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : (() => any) extends T[key]
+ *       ? T[key]
+ *       : string;
+ * }} SVGElementProps
+ */
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
  *   ? Parameters<T>[0] extends undefined
  *     ? {}
  *     : Parameters<T>[0]
- *   : ElementProps &
- *       (T extends keyof HTMLElementTagNameMap
- *         ? {
- *             -readonly [K in keyof Omit<
- *               HTMLElementTagNameMap[T],
- *               keyof ElementProps
- *             >]?: HTMLElementTagNameMap[T][K];
- *           }
- *         : T extends keyof SVGElementTagNameMap
- *           ? {
- *               -readonly [K in keyof Omit<
- *                 SVGElementTagNameMap[T],
- *                 keyof ElementProps
- *               >]?: SVGElementTagNameMap[T][K];
- *             }
- *           : { [key: string]: unknown })} Props
+ *   : T extends keyof HTMLElementTagNameMap
+ *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
+ *     : T extends keyof SVGElementTagNameMap
+ *       ? SVGElementProps<SVGElementTagNameMap[T]>
+ *       : UnkonwnElementProps} Props
  */
 /** @typedef {string | number | boolean | undefined} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */

@@ -12,12 +12,35 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
 /** @typedef {TagName | FC} Type */
 
 /**
+ * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   ref?: Ref<unknown>;
+ *   ref?: Ref<T | null>;
  *   style?: Partial<CSSStyleDeclaration>;
- * }} ElementProps
+ * }} SharedElementProps
  */
+
+/**
+ * @template {HTMLElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : T[key];
+ * }} HTMLElementProps
+ */
+
+/**
+ * @template {SVGElement} T
+ * @typedef {SharedElementProps<T> & {
+ *   [key in keyof T]?: key extends keyof SharedElementProps<T>
+ *     ? SharedElementProps<T>[key]
+ *     : (() => any) extends T[key]
+ *       ? T[key]
+ *       : string;
+ * }} SVGElementProps
+ */
+
+/** @typedef {SharedElementProps & { [key: string]: unknown }} UnkonwnElementProps */
 
 /**
  * @template [T=unknown] Default is `unknown`
@@ -25,22 +48,11 @@ const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
  *   ? Parameters<T>[0] extends undefined
  *     ? {}
  *     : Parameters<T>[0]
- *   : ElementProps &
- *       (T extends keyof HTMLElementTagNameMap
- *         ? {
- *             -readonly [K in keyof Omit<
- *               HTMLElementTagNameMap[T],
- *               keyof ElementProps
- *             >]?: HTMLElementTagNameMap[T][K];
- *           }
- *         : T extends keyof SVGElementTagNameMap
- *           ? {
- *               -readonly [K in keyof Omit<
- *                 SVGElementTagNameMap[T],
- *                 keyof ElementProps
- *               >]?: SVGElementTagNameMap[T][K];
- *             }
- *           : { [key: string]: unknown })} Props
+ *   : T extends keyof HTMLElementTagNameMap
+ *     ? HTMLElementProps<HTMLElementTagNameMap[T]>
+ *     : T extends keyof SVGElementTagNameMap
+ *       ? SVGElementProps<SVGElementTagNameMap[T]>
+ *       : UnkonwnElementProps} Props
  */
 
 /** @typedef {string | number | boolean | undefined} Key */
@@ -166,7 +178,11 @@ const createNode = (def, parentNode) => {
     type === 'svg' ? svgNs : parentNode.namespaceURI,
     /** @type {string} */ (type)
   );
-  updateNode(node, {}, /** @type {Partial<Element & ElementProps>} */ (props));
+  updateNode(
+    node,
+    {},
+    /** @type {Partial<Element & SharedElementProps>} */ (props)
+  );
   return node;
 };
 
@@ -190,8 +206,8 @@ const setStyle = (style, prev, next) => {
 /**
  * @template {Element | Text} T
  * @param {T} node
- * @param {Partial<T & ElementProps>} prev
- * @param {Partial<T & ElementProps>} next
+ * @param {Partial<T & SharedElementProps>} prev
+ * @param {Partial<T & SharedElementProps>} next
  */
 const updateNode = (node, prev, next) => {
   if (node instanceof Text) {
