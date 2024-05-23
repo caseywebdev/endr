@@ -387,9 +387,10 @@ const depsChanged = (before, after) => {
  * @param {T} fn
  */
 const useCallback = fn => {
-  const _fn = useMemo(() => fn, [fn]);
+  const ref = useRef(fn);
+  ref.current = fn;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => /** @type {T} */ ((...args) => _fn(...args)));
+  return useMemo(() => /** @type {T} */ ((...args) => ref.current(...args)));
 };
 
 /**

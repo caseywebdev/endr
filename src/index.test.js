@@ -1,35 +1,40 @@
-import { jsx, render, useCallback, useEffect, useState } from './index.js';
+import { jsx, render, useCallback, useRef, useState } from './index.js';
 
-const { setTimeout } = globalThis;
+const { clearTimeout, setTimeout } = globalThis;
+
+const resolution = 100;
 
 const Random = () => {
-  const [n, setN] = useState(0);
-
-  useEffect(() => {
-    if (n === 1) setTimeout(() => setN(0), 5000);
-  }, [n]);
+  const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
+  const [color, setColor] = useState('black');
 
   return jsx('div', {
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    onmousemove: useCallback(() => setN(1)),
+    onmousemove: useCallback(() => {
+      if (color === 'black') {
+        setColor(
+          `rgb(${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(',')})`
+        );
+      }
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+    }),
     style: {
-      display: 'inline-block',
-      cursor: 'crosshair',
-      width: '30px',
-      height: '30px',
-      transition: n < 1 ? 'all 5s' : '',
-      backgroundColor: 'blue',
-      textAlign: 'center',
-      verticalAlign: 'bottom',
-      opacity: `${n * 100}%`
+      backgroundColor: color,
+      transition: color === 'black' ? 'all 5s' : ''
     }
   });
 };
 
 render(
   jsx('div', {
-    style: { background: 'black' },
-    children: Array.from({ length: 10000 }, () => jsx(Random))
+    style: {
+      cursor: 'crosshair',
+      display: 'grid',
+      gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
+      height: '100%'
+    },
+    children: Array.from({ length: resolution * resolution }, () => jsx(Random))
   }),
   /** @type {HTMLDivElement} */ (
     globalThis.window.document.getElementById('root')
