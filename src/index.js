@@ -157,6 +157,8 @@ const emptyDef = { type: emptyType, props: emptyProps, key: undefined };
 
 const textType = /** @type {Type} */ ({});
 
+const emptyDeps = /** @type {unknown[]} */ ([]);
+
 const svgNs = 'http://www.w3.org/2000/svg';
 
 /**
@@ -321,7 +323,7 @@ const useEffect = (fn, deps) => {
   vnode.effects ??= [];
   const effect = vnode.effects[effectIndex++];
   if (!effect) vnode.effects.push({ before: undefined, after: fn, deps });
-  else if (!deps || depsChanged(effect.deps, deps)) {
+  else if (!effect.deps || !deps || depsChanged(effect.deps, deps)) {
     effect.after = fn;
     effect.deps = deps;
   }
@@ -330,16 +332,14 @@ const useEffect = (fn, deps) => {
 /**
  * @template T
  * @param {(...args: unknown[]) => T} fn
- * @param {unknown[]} [deps]
+ * @param {unknown[]} deps
  */
-const useMemo = (fn, deps) => {
+const useMemo = (fn, deps = emptyDeps) => {
   const ref = useRef(
-    /** @type {{ value: T; deps?: unknown[] }} */ (
-      /** @type {unknown} */ (null)
-    )
+    /** @type {{ value: T; deps: unknown[] }} */ (/** @type {unknown} */ (null))
   );
   if (!ref.current) ref.current = { value: fn(), deps };
-  else if (deps && depsChanged(ref.current.deps, deps)) {
+  else if (depsChanged(ref.current.deps, deps)) {
     ref.current.value = fn();
     ref.current.deps = deps;
   }
@@ -369,11 +369,11 @@ const useState = initial => {
 };
 
 /**
- * @param {unknown[] | undefined} before
+ * @param {unknown[]} before
  * @param {unknown[]} after
  */
 const depsChanged = (before, after) => {
-  if (!before || before.length !== after.length) return true;
+  if (before.length !== after.length) return true;
 
   for (let i = 0; i < before.length; ++i) {
     if (before[i] !== after[i]) return true;

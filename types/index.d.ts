@@ -472,7 +472,7 @@ export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
 /**
  * @template T
  * @param {(...args: unknown[]) => T} fn
- * @param {unknown[]} [deps]
+ * @param {unknown[]} deps
  */
 export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
 /**
