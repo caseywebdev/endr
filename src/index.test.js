@@ -1,21 +1,32 @@
-import { jsx, render, useCallback, useRef, useState } from './index.js';
+import {
+  jsx,
+  render,
+  useCallback,
+  useMemo,
+  useRef,
+  useState
+} from './index.js';
 
 const { clearTimeout, setTimeout } = globalThis;
 
-const resolution = 100;
+const resolution = 10;
 
-const Random = () => {
+/** @param {{ x: number; y: number }} props */
+const Random = ({ x, y }) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const activeColor = useMemo(
+    () =>
+      `rgb(${128 + (Math.ceil(x - y) / resolution) * 127}, ${128 + (Math.ceil(y - x) / resolution) * 127}, ${
+        128 + ((x + y) / resolution / 2) * 127
+      })`
+  );
   const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
   const [color, setColor] = useState('black');
 
   return jsx('div', {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     onmousemove: useCallback(() => {
-      if (color === 'black') {
-        setColor(
-          `rgb(${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(',')})`
-        );
-      }
+      setColor(activeColor);
       clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setColor('black'), 5000);
     }),
@@ -34,7 +45,9 @@ render(
       gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
       height: '100%'
     },
-    children: Array.from({ length: resolution * resolution }, () => jsx(Random))
+    children: Array.from({ length: resolution * resolution }, (_, i) =>
+      jsx(Random, { x: i % resolution, y: Math.floor(i / resolution) })
+    )
   }),
   /** @type {HTMLDivElement} */ (
     globalThis.window.document.getElementById('root')
