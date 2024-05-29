@@ -16,8 +16,8 @@ const Random = ({ x, y }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const activeColor = useMemo(
     () =>
-      `rgb(${128 + (Math.ceil(x - y) / resolution) * 127}, ${128 + (Math.ceil(y - x) / resolution) * 127}, ${
-        128 + ((x + y) / resolution / 2) * 127
+      `rgb(${128 + ((x - y) / resolution) * 128}, ${128 + ((y - x) / resolution) * 128}, ${
+        ((x + y) / resolution / 2) * 256
       })`
   );
   const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
