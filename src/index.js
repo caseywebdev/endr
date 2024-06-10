@@ -522,7 +522,7 @@ const reconcile = parent => {
   const children =
     typeof parent.type === 'function'
       ? parent.type(parent.props)
-      : /** @type {Children} */ (parent.props.children);
+      : parent.props.children;
   const defs = isEmpty(children)
     ? []
     : Array.isArray(children)
