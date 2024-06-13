@@ -3,10 +3,11 @@
 node_modules/.bin/eslint src/index.js
 
 node_modules/.bin/tsc \
+  --allowJs \
   --declaration \
-  --emitDeclarationOnly \
   --declarationDir types \
-  --allowJs src/index.js
+  --emitDeclarationOnly \
+  src/index.js
 
 bumpit
 
