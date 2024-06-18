@@ -9,8 +9,8 @@ const Root = () => {
 
   return (
     <div>
-      <Button onclick={() => setCount(count + 1)}>This button</Button>{' '}
-      has been clicked {times} {time === 1 ? 'time' : 'times'}
+      <button onclick={() => setCount(count + 1)}>This button</button>{' '}
+      has been clicked {count} {count === 1 ? 'time' : 'times'}
     </div>
   );
 };
