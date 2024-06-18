@@ -1,6 +1,23 @@
 # Endr
 An **En**gine for **D**OM **R**ecombobulation.
 
+```js
+import { render, useState } from 'endr';
+
+const Root = () => {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <Button onclick={() => setCount(count + 1)}>This button</Button>{' '}
+      has been clicked {times} {time === 1 ? 'time' : 'times'}
+    </div>
+  );
+};
+
+render(<Root />, document.body);
+```
+
 # Why?
 Endr takes the best parts of React and ditches the rest to result in a lean and
 fast virtual DOM rendering library. React is a great tool but has acquired some
