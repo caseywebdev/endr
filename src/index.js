@@ -600,13 +600,13 @@ const update = root => {
       refIndex = 0;
       vnode.updated = true;
     }
+    vnode.shouldUpdate = null;
     if (vnode.node) nodeStack[nodeStack.length - 1] = vnode.node;
 
     if (vnode.child) {
       if (vnode.node) nodeStack.push(null);
       vnode = vnode.child;
     } else {
-      vnode.shouldUpdate = null;
       while (true) {
         if (vnode.effects) {
           for (const effect of vnode.effects) {
