@@ -590,7 +590,6 @@ const update = root => {
   const nodeStack = [root.prevSiblingNode ?? null];
   while (true) {
     vnode.prevSiblingNode = /** @type {Element | Text} */ (nodeStack.at(-1));
-    if (vnode.parent) vnode.shouldUpdate ??= vnode.parent.shouldUpdate;
     if (vnode.shouldUpdate !== false) {
       currentVnode = vnode;
       effectIndex = 0;
