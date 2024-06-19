@@ -1,5 +1,4 @@
-const { CSSStyleDeclaration, document, requestAnimationFrame, Text } =
-  globalThis;
+const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
 
 /** @typedef {Def | string | number | false | null | undefined} Child */
 
@@ -458,7 +457,7 @@ const queueUpdate = vnode => {
   if (vnode.queued) return;
 
   if (updateQueue.length === 0) {
-    requestAnimationFrame(() => {
+    queueMicrotask(() => {
       const batch = updateQueue.sort(batchComparator);
       updateQueue = [];
       for (const vnode of batch) {
