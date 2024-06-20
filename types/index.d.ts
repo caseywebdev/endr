@@ -35,6 +35,7 @@ export type Effect = {
     deps: unknown[] | undefined;
 };
 export type Vnode = {
+    child: Vnode | null;
     contexts: Map<({ value, children }: {
         value: unknown;
         children?: Children;
@@ -42,20 +43,19 @@ export type Vnode = {
         vnodes: Set<Vnode>;
         value: unknown;
     }> | null;
-    child: Vnode | null;
     deleted: boolean;
     effects: Effect[] | null;
     key: Key;
+    next: Vnode | null;
     node: Element | Text | null;
     parent: Vnode | null;
-    parentNode: Element | null;
+    parentNode: Element;
     path: number[];
-    prevSiblingNode: Element | Text | null;
+    prevNode: Element | Text | null;
     props: Props;
     queued: boolean;
     refs: Ref<unknown>[] | null;
     shouldUpdate: boolean | null;
-    sibling: Vnode | null;
     type: Type;
     updated: boolean;
 };
@@ -127,24 +127,24 @@ export function Fragment(props: {
  */
 /**
  * @typedef {{
+ *   child: Vnode | null;
  *   contexts: Map<
  *     ReturnType<typeof createContext>,
  *     { vnodes: Set<Vnode>; value: unknown }
  *   > | null;
- *   child: Vnode | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
- *   parentNode: Element | null;
+ *   parentNode: Element;
  *   path: number[];
- *   prevSiblingNode: Element | Text | null;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
- *   sibling: Vnode | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -221,24 +221,24 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
+ *   child: Vnode | null;
  *   contexts: Map<
  *     ReturnType<typeof createContext>,
  *     { vnodes: Set<Vnode>; value: unknown }
  *   > | null;
- *   child: Vnode | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
- *   parentNode: Element | null;
+ *   parentNode: Element;
  *   path: number[];
- *   prevSiblingNode: Element | Text | null;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
- *   sibling: Vnode | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -315,24 +315,24 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
+ *   child: Vnode | null;
  *   contexts: Map<
  *     ReturnType<typeof createContext>,
  *     { vnodes: Set<Vnode>; value: unknown }
  *   > | null;
- *   child: Vnode | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
- *   parentNode: Element | null;
+ *   parentNode: Element;
  *   path: number[];
- *   prevSiblingNode: Element | Text | null;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
- *   sibling: Vnode | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -409,24 +409,24 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
+ *   child: Vnode | null;
  *   contexts: Map<
  *     ReturnType<typeof createContext>,
  *     { vnodes: Set<Vnode>; value: unknown }
  *   > | null;
- *   child: Vnode | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
- *   parentNode: Element | null;
+ *   parentNode: Element;
  *   path: number[];
- *   prevSiblingNode: Element | Text | null;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
- *   sibling: Vnode | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode

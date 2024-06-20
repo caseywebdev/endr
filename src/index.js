@@ -77,24 +77,24 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
 
 /**
  * @typedef {{
+ *   child: Vnode | null;
  *   contexts: Map<
  *     ReturnType<typeof createContext>,
  *     { vnodes: Set<Vnode>; value: unknown }
  *   > | null;
- *   child: Vnode | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
- *   parentNode: Element | null;
+ *   parentNode: Element;
  *   path: number[];
- *   prevSiblingNode: Element | Text | null;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
  *   shouldUpdate: boolean | null;
- *   sibling: Vnode | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -283,8 +283,8 @@ const remove = root => {
 
         if (vnode === root) return;
 
-        if (vnode.sibling) {
-          vnode = vnode.sibling;
+        if (vnode.next) {
+          vnode = vnode.next;
           break;
         }
 
@@ -502,16 +502,16 @@ const createVnode = ({
   deleted: false,
   effects: null,
   key,
+  next: null,
   node,
   parent,
   parentNode,
   path,
-  prevSiblingNode: null,
+  prevNode: null,
   props,
   queued: false,
   refs: null,
   shouldUpdate: null,
-  sibling: null,
   type,
   updated: false
 });
@@ -530,7 +530,7 @@ const reconcile = parent => {
   const parentNode = /** @type {Element} */ (parent.node ?? parent.parentNode);
   /** @type {{ [key: string]: Vnode | null }} */
   const prevByKey = {};
-  for (let i = 0, prev = parent.child; prev; ++i, prev = prev.sibling) {
+  for (let i = 0, prev = parent.child; prev; ++i, prev = prev.next) {
     prevByKey[prev.key == null ? `-${i}` : `+${prev.key}`] ??= prev;
   }
   parent.child = null;
@@ -551,9 +551,7 @@ const reconcile = parent => {
     let child = prevByKey[key];
     if (child && child.type === def.type) {
       prevByKey[key] = null;
-      child.parent = parent;
-      child.parentNode = parentNode;
-      child.sibling = null;
+      child.next = null;
       if (child.props === def.props) child.shouldUpdate ??= false;
       if (child.node && child.shouldUpdate !== false) {
         updateNode(child.node, child.props, def.props);
@@ -572,7 +570,7 @@ const reconcile = parent => {
         type: def.type
       });
     }
-    if (prev) prev.sibling = child;
+    if (prev) prev.next = child;
     else parent.child = child;
     prev = child;
   }
@@ -586,9 +584,9 @@ const reconcile = parent => {
 /** @param {Vnode} root */
 const update = root => {
   let vnode = root;
-  const nodeStack = [root.prevSiblingNode ?? null];
+  const nodeStack = [root.prevNode ?? null];
   while (true) {
-    vnode.prevSiblingNode = /** @type {Element | Text} */ (nodeStack.at(-1));
+    vnode.prevNode = /** @type {Element | Text} */ (nodeStack.at(-1));
     if (vnode.shouldUpdate !== false) {
       currentVnode = vnode;
       effectIndex = 0;
@@ -617,15 +615,16 @@ const update = root => {
         }
 
         if (vnode.node) {
-          if (vnode.prevSiblingNode) {
-            if (vnode.prevSiblingNode.nextSibling !== vnode.node) {
-              vnode.prevSiblingNode.after(vnode.node);
+          const target = vnode.prevNode
+            ? vnode.prevNode.nextSibling
+            : vnode.parentNode.firstChild;
+          if (target !== vnode.node) {
+            const shouldSwap = !!vnode.node.parentNode;
+            const swapTarget = vnode.node.nextSibling;
+            vnode.parentNode.insertBefore(vnode.node, target);
+            if (target && shouldSwap && target !== swapTarget) {
+              vnode.parentNode.insertBefore(target, swapTarget);
             }
-          } else if (
-            vnode.parentNode &&
-            vnode.parentNode.firstChild !== vnode.node
-          ) {
-            vnode.parentNode.prepend(vnode.node);
           }
         }
 
@@ -640,8 +639,8 @@ const update = root => {
 
         if (vnode === root) return;
 
-        if (vnode.sibling) {
-          vnode = vnode.sibling;
+        if (vnode.next) {
+          vnode = vnode.next;
           break;
         }
 
@@ -661,12 +660,12 @@ const render = (children, node) =>
     createVnode({
       contexts: null,
       key: undefined,
-      node,
+      node: null,
       parent: null,
-      parentNode: null,
+      parentNode: node,
       path: [],
       props: { children },
-      type: /** @type {Type} */ (node.tagName.toLowerCase())
+      type: Fragment
     })
   );
 
