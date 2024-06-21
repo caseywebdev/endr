@@ -1,18 +1,23 @@
 import {
+  createContext,
   jsx,
+  memo,
   render,
   useCallback,
+  useContext,
+  useEffect,
   useMemo,
   useRef,
   useState
 } from './index.js';
 
-const { clearTimeout, setTimeout } = globalThis;
+const { clearTimeout, setTimeout, setInterval } = globalThis;
 
-const resolution = 10;
+const resolution = 2;
 
 /** @param {{ x: number; y: number }} props */
-const Random = ({ x, y }) => {
+const Random = memo(({ x, y }) => {
+  const now = useContext(Context);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const activeColor = useMemo(
     () =>
@@ -32,23 +37,42 @@ const Random = ({ x, y }) => {
     }),
     style: {
       backgroundColor: color,
-      transition: color === 'black' ? 'all 5s' : ''
-    }
+      transition: color === 'black' ? 'all 5s' : '',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    children: now
+  });
+});
+
+const Context = /** @type {typeof createContext<number>} */ (createContext)();
+
+const Root = () => {
+  const [now, setNow] = useState(new Date().getSeconds());
+
+  useEffect(() => {
+    setInterval(() => setNow(new Date().getSeconds()), 1000);
+  });
+
+  return jsx(Context, {
+    value: now,
+    children: jsx('div', {
+      style: {
+        cursor: 'crosshair',
+        display: 'grid',
+        gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
+        height: '100%'
+      },
+      children: Array.from({ length: resolution * resolution }, (_, i) =>
+        jsx(Random, { x: i % resolution, y: Math.floor(i / resolution) })
+      )
+    })
   });
 };
 
 render(
-  jsx('div', {
-    style: {
-      cursor: 'crosshair',
-      display: 'grid',
-      gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
-      height: '100%'
-    },
-    children: Array.from({ length: resolution * resolution }, (_, i) =>
-      jsx(Random, { x: i % resolution, y: Math.floor(i / resolution) })
-    )
-  }),
+  jsx(Root),
   /** @type {HTMLDivElement} */ (
     globalThis.window.document.getElementById('root')
   )

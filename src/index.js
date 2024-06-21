@@ -78,13 +78,13 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   contexts: Map<
- *     ReturnType<typeof createContext>,
- *     { vnodes: Set<Vnode>; value: unknown }
- *   > | null;
+ *   childNeedsUpdate: boolean;
+ *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   lastNode: Element | Text | null;
+ *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
@@ -94,7 +94,6 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
- *   shouldUpdate: boolean | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -121,12 +120,13 @@ const jsxsDEV = jsx;
 const Fragment = /** @param {{ children?: Children }} props */ props =>
   props.children;
 
+/** @template T */
 const createContext = () => {
-  /** @param {{ value: unknown; children?: Children }} props */
+  /** @param {{ value: T; children?: Children }} props */
   const Context = ({ value, children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const context = useMemo(() => {
-      const context = { vnodes: /** @type {Set<Vnode>} */ (new Set()), value };
+      const context = { value, vnodes: /** @type {Set<Vnode>} */ (new Set()) };
       const vnode = /** @type {Vnode} */ (currentVnode);
       vnode.contexts = new Map(vnode.contexts).set(Context, context);
       return context;
@@ -135,7 +135,12 @@ const createContext = () => {
     if (value !== context.value) {
       context.value = value;
       context.vnodes.forEach(vnode => {
-        vnode.shouldUpdate = true;
+        vnode.needsUpdate = true;
+        let parent = vnode.parent;
+        while (parent && !parent.childNeedsUpdate && parent !== currentVnode) {
+          parent.childNeedsUpdate = true;
+          parent = parent.parent;
+        }
       });
     }
 
@@ -144,6 +149,16 @@ const createContext = () => {
 
   return Context;
 };
+
+/**
+ * @template T
+ * @typedef {ReturnType<typeof createContext<T>>} Context
+ */
+
+/**
+ * @template {Context<unknown>} T
+ * @typedef {Parameters<T>[0]['value']} ContextValue
+ */
 
 /** @param {unknown} value */
 const isEmpty = value => value == null || value === false || value === '';
@@ -253,44 +268,6 @@ const updateNode = (node, prev, next) => {
     } else if (next[key] != null) {
       node.setAttribute(key, /** @type {string} */ (next[key]));
     } else node.removeAttribute(key);
-  }
-};
-
-/** @param {Vnode} root */
-const remove = root => {
-  let vnode = root;
-  /** @type {Element | Text | null} */
-  let parentNode = null;
-  while (true) {
-    vnode.deleted = true;
-    parentNode ??= vnode.node;
-    if (vnode.child) vnode = vnode.child;
-    else {
-      while (true) {
-        if (vnode.effects) {
-          for (const effect of vnode.effects) {
-            if (effect.before) {
-              effect.before();
-              effect.before = undefined;
-            }
-          }
-        }
-
-        if (parentNode && vnode.node === parentNode) {
-          parentNode.remove();
-          parentNode = null;
-        }
-
-        if (vnode === root) return;
-
-        if (vnode.next) {
-          vnode = vnode.next;
-          break;
-        }
-
-        vnode = /** @type {Vnode} */ (vnode.parent);
-      }
-    }
   }
 };
 
@@ -420,7 +397,10 @@ const memo =
     return jsx(Component, _props);
   };
 
-/** @param {ReturnType<typeof createContext>} Context */
+/**
+ * @template {Context<any>} T
+ * @param {T} Context
+ */
 const useContext = Context => {
   const vnode = /** @type {Vnode} */ (currentVnode);
 
@@ -433,7 +413,7 @@ const useContext = Context => {
     return () => context.vnodes.delete(vnode);
   }, [context, vnode]);
 
-  return context?.value;
+  return /** @type {ContextValue<T>} */ (context?.value);
 };
 
 /**
@@ -461,7 +441,7 @@ const queueUpdate = vnode => {
       const batch = updateQueue.sort(batchComparator);
       updateQueue = [];
       for (const vnode of batch) {
-        vnode.shouldUpdate = true;
+        vnode.needsUpdate = true;
         vnode.updated = false;
         vnode.queued = false;
       }
@@ -474,167 +454,184 @@ const queueUpdate = vnode => {
   vnode.queued = true;
 };
 
-/**
- * @param {Pick<
- *   Vnode,
- *   | 'contexts'
- *   | 'key'
- *   | 'node'
- *   | 'parent'
- *   | 'parentNode'
- *   | 'path'
- *   | 'props'
- *   | 'type'
- * >} options
- */
-const createVnode = ({
-  contexts,
-  key,
-  node,
-  parent,
-  parentNode,
-  path,
-  props,
-  type
-}) => ({
-  child: null,
-  contexts,
-  deleted: false,
-  effects: null,
-  key,
-  next: null,
-  node,
-  parent,
-  parentNode,
-  path,
-  prevNode: null,
-  props,
-  queued: false,
-  refs: null,
-  shouldUpdate: null,
-  type,
-  updated: false
-});
-
-/** @param {Vnode} parent */
-const reconcile = parent => {
+/** @param {Vnode} vnode */
+const getDefs = vnode => {
+  currentVnode = vnode;
+  effectIndex = 0;
+  refIndex = 0;
   const children =
-    typeof parent.type === 'function'
-      ? parent.type(parent.props)
-      : parent.props.children;
-  const defs = isEmpty(children)
-    ? []
-    : Array.isArray(children)
-      ? children
-      : [children];
-  const parentNode = /** @type {Element} */ (parent.node ?? parent.parentNode);
-  /** @type {{ [key: string]: Vnode | null }} */
-  const prevByKey = {};
-  for (let i = 0, prev = parent.child; prev; ++i, prev = prev.next) {
-    prevByKey[prev.key == null ? `-${i}` : `+${prev.key}`] ??= prev;
-  }
-  parent.child = null;
-
-  for (
-    let i = 0, prev = /** @type {Vnode | null} */ (null);
-    i < defs.length;
-    ++i
-  ) {
-    const def = isEmpty(defs[i])
+    typeof vnode.type === 'function'
+      ? vnode.type(vnode.props)
+      : vnode.props.children;
+  currentVnode = null;
+  effectIndex = 0;
+  refIndex = 0;
+  return (
+    isEmpty(children) ? [] : Array.isArray(children) ? children : [children]
+  ).map(def =>
+    isEmpty(def)
       ? emptyDef
-      : Array.isArray(defs[i])
-        ? { type: Fragment, props: { children: defs[i] }, key: undefined }
-        : typeof defs[i] !== 'object'
-          ? { type: textType, props: { nodeValue: defs[i] }, key: undefined }
-          : /** @type {Def} */ (defs[i]);
-    const key = def.key == null ? `-${i}` : `+${def.key}`;
-    let child = prevByKey[key];
-    if (child && child.type === def.type) {
-      prevByKey[key] = null;
-      child.next = null;
-      if (child.props === def.props) child.shouldUpdate ??= false;
-      if (child.node && child.shouldUpdate !== false) {
-        updateNode(child.node, child.props, def.props);
-      }
-      child.props = def.props;
-    } else {
-      child = createVnode({
-        contexts: parent.contexts,
-        key: def.key,
-        node:
-          typeof def.type === 'function' ? null : createNode(def, parentNode),
-        parent,
-        parentNode,
-        path: parent.path.concat(i),
-        props: def.props,
-        type: def.type
-      });
-    }
-    if (prev) prev.next = child;
-    else parent.child = child;
-    prev = child;
-  }
+      : Array.isArray(def)
+        ? { type: Fragment, props: { children: def }, key: undefined }
+        : typeof def !== 'object'
+          ? { type: textType, props: { nodeValue: def }, key: undefined }
+          : /** @type {Def} */ (def)
+  );
+};
 
-  for (const key in prevByKey) {
-    const vnode = prevByKey[key];
-    if (vnode) remove(vnode);
+/**
+ * @param {Def} def
+ * @param {Vnode | null} parent
+ * @param {Element} parentNode
+ * @param {Element | Text | null} prevNode
+ * @param {number[]} path
+ */
+const create = (def, parent, parentNode, prevNode, path) => {
+  /** @type {Vnode} */
+  const vnode = {
+    child: null,
+    childNeedsUpdate: false,
+    contexts: parent?.contexts ?? null,
+    deleted: false,
+    effects: null,
+    key: def.key,
+    lastNode: null,
+    needsUpdate: false,
+    next: null,
+    node: typeof def.type === 'function' ? null : createNode(def, parentNode),
+    parent,
+    parentNode,
+    path,
+    prevNode,
+    props: def.props,
+    queued: false,
+    refs: null,
+    type: def.type,
+    updated: false
+  };
+
+  update(vnode);
+
+  return vnode;
+};
+
+/** @param {Vnode} vnode */
+const updateNeedsUpdateChildren = vnode => {
+  for (let child = vnode.child; child; child = child.next) {
+    if (child.needsUpdate) update(child);
+    else if (child.childNeedsUpdate) updateNeedsUpdateChildren(child);
   }
 };
 
-/** @param {Vnode} root */
-const update = root => {
-  let vnode = root;
-  const nodeStack = [root.prevNode ?? null];
-  while (true) {
-    vnode.prevNode = /** @type {Element | Text} */ (nodeStack.at(-1));
-    if (vnode.shouldUpdate !== false) {
-      currentVnode = vnode;
-      effectIndex = 0;
-      refIndex = 0;
-      reconcile(vnode);
-      currentVnode = null;
-      effectIndex = 0;
-      refIndex = 0;
-      vnode.updated = true;
-    }
-    vnode.shouldUpdate = null;
-    if (vnode.node) nodeStack[nodeStack.length - 1] = vnode.node;
+/** @param {Vnode} vnode */
+const getNodes = vnode => {
+  if (vnode.node) return [vnode.node];
 
-    if (vnode.child) {
-      if (vnode.node) nodeStack.push(null);
-      vnode = vnode.child;
+  /** @type {(Element | Text)[]} */
+  const nodes = [];
+  for (let child = vnode.child; child; child = child.next) {
+    nodes.push(...getNodes(child));
+  }
+  return nodes;
+};
+
+/** @param {Vnode} vnode */
+const update = vnode => {
+  if (vnode.effects) {
+    for (const effect of vnode.effects) {
+      if (effect.after && effect.before) {
+        effect.before();
+        effect.before = undefined;
+      }
+    }
+  }
+
+  const prevByKey = new /** @type {typeof Map<string, Vnode>} */ (Map)();
+  for (let i = 0, prev = vnode.child; prev; ++i, prev = prev.next) {
+    prevByKey.set(prev.key == null ? `-${i}` : `+${prev.key}`, prev);
+  }
+  vnode.child = null;
+
+  const defs = getDefs(vnode);
+  /** @type {Vnode | null} */
+  let prev = null;
+  let prevNode = vnode.node ? null : vnode.prevNode;
+  const parentNode = /** @type {Element} */ (vnode.node ?? vnode.parentNode);
+  for (let i = 0; i < defs.length; ++i) {
+    const def = defs[i];
+    const key = def.key == null ? `-${i}` : `+${def.key}`;
+    let child = prevByKey.get(key);
+    if (child && child.type === def.type) {
+      prevByKey.delete(key);
+      child.next = null;
+      if (prevNode !== child.prevNode) {
+        child.prevNode = prevNode;
+        if (child.lastNode) {
+          const nodes = getNodes(child);
+          if (prevNode) prevNode.after(...nodes);
+          else parentNode.prepend(...nodes);
+        }
+      }
+      if (child.props !== def.props || child.needsUpdate === true) {
+        if (child.node) updateNode(child.node, child.props, def.props);
+        child.props = def.props;
+        update(child);
+      } else if (child.childNeedsUpdate) updateNeedsUpdateChildren(child);
     } else {
+      child = create(def, vnode, parentNode, prevNode, vnode.path.concat(i));
+    }
+    if (prev) prev.next = child;
+    else vnode.child = child;
+    prev = child;
+    if (child.lastNode) prevNode = child.lastNode;
+  }
+
+  prevByKey.forEach(remove);
+
+  vnode.lastNode = vnode.node ?? prev?.lastNode ?? null;
+
+  if (vnode.node && !vnode.node.parentNode) {
+    if (vnode.prevNode) vnode.prevNode.after(vnode.node);
+    else vnode.parentNode.prepend(vnode.node);
+  }
+
+  if (vnode.effects) {
+    for (const effect of vnode.effects) {
+      if (effect.after) {
+        effect.before = effect.after();
+        effect.after = undefined;
+      }
+    }
+  }
+
+  vnode.childNeedsUpdate = false;
+  vnode.needsUpdate = false;
+  vnode.updated = true;
+};
+
+/** @param {Vnode} root */
+const remove = root => {
+  let vnode = root;
+  /** @type {Element | Text | null} */
+  let parentNode = null;
+  while (true) {
+    vnode.deleted = true;
+    parentNode ??= vnode.node;
+    if (vnode.child) vnode = vnode.child;
+    else {
       while (true) {
         if (vnode.effects) {
           for (const effect of vnode.effects) {
-            if (effect.after && effect.before) {
+            if (effect.before) {
               effect.before();
               effect.before = undefined;
             }
           }
         }
 
-        if (vnode.node) {
-          const target = vnode.prevNode
-            ? vnode.prevNode.nextSibling
-            : vnode.parentNode.firstChild;
-          if (target !== vnode.node) {
-            const shouldSwap = !!vnode.node.parentNode;
-            const swapTarget = vnode.node.nextSibling;
-            vnode.parentNode.insertBefore(vnode.node, target);
-            if (target && shouldSwap && target !== swapTarget) {
-              vnode.parentNode.insertBefore(target, swapTarget);
-            }
-          }
-        }
-
-        if (vnode.effects) {
-          for (const effect of vnode.effects) {
-            if (effect.after) {
-              effect.before = effect.after();
-              effect.after = undefined;
-            }
-          }
+        if (parentNode && vnode.node === parentNode) {
+          parentNode.remove();
+          parentNode = null;
         }
 
         if (vnode === root) return;
@@ -645,7 +642,6 @@ const update = root => {
         }
 
         vnode = /** @type {Vnode} */ (vnode.parent);
-        if (vnode.node) nodeStack.pop();
       }
     }
   }
@@ -656,17 +652,12 @@ const update = root => {
  * @param {Element} node
  */
 const render = (children, node) =>
-  update(
-    createVnode({
-      contexts: null,
-      key: undefined,
-      node: null,
-      parent: null,
-      parentNode: node,
-      path: [],
-      props: { children },
-      type: Fragment
-    })
+  create(
+    { key: undefined, type: Fragment, props: { children } },
+    null,
+    node,
+    null,
+    []
   );
 
 // eslint-disable-next-line import/no-named-export
