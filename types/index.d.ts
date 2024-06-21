@@ -36,16 +36,19 @@ export type Effect = {
 };
 export type Vnode = {
     child: Vnode | null;
+    childNeedsUpdate: boolean;
     contexts: Map<({ value, children }: {
-        value: unknown;
+        value: any;
         children?: Children;
     }) => Children, {
+        value: any;
         vnodes: Set<Vnode>;
-        value: unknown;
     }> | null;
     deleted: boolean;
     effects: Effect[] | null;
     key: Key;
+    lastNode: Element | Text | null;
+    needsUpdate: boolean;
     next: Vnode | null;
     node: Element | Text | null;
     parent: Vnode | null;
@@ -55,12 +58,17 @@ export type Vnode = {
     props: Props;
     queued: boolean;
     refs: Ref<unknown>[] | null;
-    shouldUpdate: boolean | null;
     type: Type;
     updated: boolean;
 };
-export function createContext(): ({ value, children }: {
+export type Context<T> = ReturnType<typeof createContext<T>>;
+export type ContextValue<T extends ({ value, children }: {
     value: unknown;
+    children?: Children;
+}) => Children> = Parameters<T>[0]['value'];
+/** @template T */
+export function createContext<T>(): ({ value, children }: {
+    value: T;
     children?: Children;
 }) => Children;
 export function Fragment(props: {
@@ -128,13 +136,13 @@ export function Fragment(props: {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   contexts: Map<
- *     ReturnType<typeof createContext>,
- *     { vnodes: Set<Vnode>; value: unknown }
- *   > | null;
+ *   childNeedsUpdate: boolean;
+ *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   lastNode: Element | Text | null;
+ *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
@@ -144,7 +152,6 @@ export function Fragment(props: {
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
- *   shouldUpdate: boolean | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -222,13 +229,13 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   contexts: Map<
- *     ReturnType<typeof createContext>,
- *     { vnodes: Set<Vnode>; value: unknown }
- *   > | null;
+ *   childNeedsUpdate: boolean;
+ *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   lastNode: Element | Text | null;
+ *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
@@ -238,7 +245,6 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
- *   shouldUpdate: boolean | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -316,13 +322,13 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   contexts: Map<
- *     ReturnType<typeof createContext>,
- *     { vnodes: Set<Vnode>; value: unknown }
- *   > | null;
+ *   childNeedsUpdate: boolean;
+ *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   lastNode: Element | Text | null;
+ *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
@@ -332,7 +338,6 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
- *   shouldUpdate: boolean | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -410,13 +415,13 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   contexts: Map<
- *     ReturnType<typeof createContext>,
- *     { vnodes: Set<Vnode>; value: unknown }
- *   > | null;
+ *   childNeedsUpdate: boolean;
+ *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   deleted: boolean;
  *   effects: Effect[] | null;
  *   key: Key;
+ *   lastNode: Element | Text | null;
+ *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
@@ -426,7 +431,6 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   props: Props;
  *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
- *   shouldUpdate: boolean | null;
  *   type: Type;
  *   updated: boolean;
  * }} Vnode
@@ -456,14 +460,20 @@ export function memo<Component extends FC>(Component: Component, isEqual?: typeo
  * @param {Children} children
  * @param {Element} node
  */
-export function render(children: Children, node: Element): void;
+export function render(children: Children, node: Element): Vnode;
 /**
  * @template {(...args: unknown[]) => unknown} T
  * @param {T} fn
  */
 export function useCallback<T extends (...args: unknown[]) => unknown>(fn: T): T;
-/** @param {ReturnType<typeof createContext>} Context */
-export function useContext(Context: ReturnType<typeof createContext>): any;
+/**
+ * @template {Context<any>} T
+ * @param {T} Context
+ */
+export function useContext<T extends ({ value, children }: {
+    value: any;
+    children?: Children;
+}) => Children>(Context: T): ContextValue<T>;
 /**
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]
