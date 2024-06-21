@@ -13,7 +13,7 @@ import {
 
 const { clearTimeout, setTimeout, setInterval } = globalThis;
 
-const resolution = 2;
+const resolution = 10;
 
 /** @param {{ x: number; y: number }} props */
 const Random = memo(({ x, y }) => {
@@ -40,7 +40,8 @@ const Random = memo(({ x, y }) => {
       transition: color === 'black' ? 'all 5s' : '',
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      overflow: 'hidden'
     },
     children: now
   });
