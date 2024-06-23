@@ -1,6 +1,8 @@
 export type Child = Def | string | number | false | null | undefined;
 export type Children = Child | Child[];
-export type FC = (props: any) => Children;
+export type FC = ((props: any) => Children) & {
+    memo?: (a: Props, b: Props) => boolean;
+};
 export type TagName = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap;
 export type Type = TagName | FC;
 export type SharedElementProps<T = unknown> = {
@@ -36,36 +38,27 @@ export type Effect = {
 };
 export type Vnode = {
     child: Vnode | null;
-    childNeedsUpdate: boolean;
-    contexts: Map<({ value, children }: {
-        value: any;
-        children?: Children;
-    }) => Children, {
+    contexts: Map<Context<any>, {
         value: any;
         vnodes: Set<Vnode>;
     }> | null;
-    deleted: boolean;
+    depth: number;
     effects: Effect[] | null;
+    index: number;
     key: Key;
     lastNode: Element | Text | null;
-    needsUpdate: boolean;
     next: Vnode | null;
     node: Element | Text | null;
     parent: Vnode | null;
     parentNode: Element;
-    path: number[];
     prevNode: Element | Text | null;
     props: Props;
-    queued: boolean;
     refs: Ref<unknown>[] | null;
+    state: number;
     type: Type;
-    updated: boolean;
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
-export type ContextValue<T extends ({ value, children }: {
-    value: unknown;
-    children?: Children;
-}) => Children> = Parameters<T>[0]['value'];
+export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
 /** @template T */
 export function createContext<T>(): ({ value, children }: {
     value: T;
@@ -76,7 +69,11 @@ export function Fragment(props: {
 }): Children;
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: any) => Children} FC */
+/**
+ * @typedef {((props: any) => Children) & {
+ *   memo?: (a: Props, b: Props) => boolean;
+ * }} FC
+ */
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
@@ -136,24 +133,21 @@ export function Fragment(props: {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   childNeedsUpdate: boolean;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
- *   deleted: boolean;
+ *   depth: number;
  *   effects: Effect[] | null;
+ *   index: number;
  *   key: Key;
  *   lastNode: Element | Text | null;
- *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   path: number[];
  *   prevNode: Element | Text | null;
  *   props: Props;
- *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
+ *   state: number;
  *   type: Type;
- *   updated: boolean;
  * }} Vnode
  */
 /**
@@ -169,7 +163,11 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: any) => Children} FC */
+/**
+ * @typedef {((props: any) => Children) & {
+ *   memo?: (a: Props, b: Props) => boolean;
+ * }} FC
+ */
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
@@ -229,24 +227,21 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   childNeedsUpdate: boolean;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
- *   deleted: boolean;
+ *   depth: number;
  *   effects: Effect[] | null;
+ *   index: number;
  *   key: Key;
  *   lastNode: Element | Text | null;
- *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   path: number[];
  *   prevNode: Element | Text | null;
  *   props: Props;
- *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
+ *   state: number;
  *   type: Type;
- *   updated: boolean;
  * }} Vnode
  */
 /**
@@ -262,7 +257,11 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: any) => Children} FC */
+/**
+ * @typedef {((props: any) => Children) & {
+ *   memo?: (a: Props, b: Props) => boolean;
+ * }} FC
+ */
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
@@ -322,24 +321,21 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   childNeedsUpdate: boolean;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
- *   deleted: boolean;
+ *   depth: number;
  *   effects: Effect[] | null;
+ *   index: number;
  *   key: Key;
  *   lastNode: Element | Text | null;
- *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   path: number[];
  *   prevNode: Element | Text | null;
  *   props: Props;
- *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
+ *   state: number;
  *   type: Type;
- *   updated: boolean;
  * }} Vnode
  */
 /**
@@ -355,7 +351,11 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
-/** @typedef {(props: any) => Children} FC */
+/**
+ * @typedef {((props: any) => Children) & {
+ *   memo?: (a: Props, b: Props) => boolean;
+ * }} FC
+ */
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 /** @typedef {TagName | FC} Type */
 /**
@@ -415,24 +415,21 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   childNeedsUpdate: boolean;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
- *   deleted: boolean;
+ *   depth: number;
  *   effects: Effect[] | null;
+ *   index: number;
  *   key: Key;
  *   lastNode: Element | Text | null;
- *   needsUpdate: boolean;
  *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   path: number[];
  *   prevNode: Element | Text | null;
  *   props: Props;
- *   queued: boolean;
  *   refs: Ref<unknown>[] | null;
+ *   state: number;
  *   type: Type;
- *   updated: boolean;
  * }} Vnode
  */
 /**
@@ -449,13 +446,9 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @template {FC} Component
  * @param {Component} Component
- * @param {typeof defaultIsEqual} [isEqual]
+ * @param {typeof defaultMemo} [memo]
  */
-export function memo<Component extends FC>(Component: Component, isEqual?: typeof defaultIsEqual): (props: Props<Component>) => {
-    type: Component;
-    props: Props<Component>;
-    key: Key;
-};
+export function memo<Component extends FC>(Component: Component, memo?: typeof defaultMemo): Component;
 /**
  * @param {Children} children
  * @param {Element} node
@@ -470,10 +463,7 @@ export function useCallback<T extends (...args: unknown[]) => unknown>(fn: T): T
  * @template {Context<any>} T
  * @param {T} Context
  */
-export function useContext<T extends ({ value, children }: {
-    value: any;
-    children?: Children;
-}) => Children>(Context: T): ContextValue<T>;
+export function useContext<T extends Context<any>>(Context: T): ContextValue<T> | undefined;
 /**
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]
@@ -499,7 +489,7 @@ export function useState<T>(initial: T): [T, (next: T | ((current: T) => T)) => 
  * @param {{ [key: string]: unknown }} prev
  * @param {{ [key: string]: unknown }} next
  */
-declare function defaultIsEqual(prev: {
+declare function defaultMemo(prev: {
     [key: string]: unknown;
 }, next: {
     [key: string]: unknown;
