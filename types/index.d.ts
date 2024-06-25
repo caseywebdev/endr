@@ -37,7 +37,9 @@ export type Effect = {
     deps: unknown[] | undefined;
 };
 export type Vnode = {
-    child: Vnode | null;
+    children: {
+        [key: string]: Vnode;
+    } | null;
     contexts: Map<Context<any>, {
         value: any;
         vnodes: Set<Vnode>;
@@ -45,13 +47,11 @@ export type Vnode = {
     depth: number;
     effects: Effect[] | null;
     index: number;
-    key: Key;
     lastNode: Element | Text | null;
-    next: Vnode | null;
     node: Element | Text | null;
     parent: Vnode | null;
     parentNode: Element;
-    prevNode: Element | Text | null;
+    prevNode: Element | Text | null | undefined;
     props: Props;
     refs: Ref<unknown>[] | null;
     state: number;
@@ -132,18 +132,16 @@ export function Fragment(props: {
  */
 /**
  * @typedef {{
- *   child: Vnode | null;
+ *   children: { [key: string]: Vnode } | null;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
- *   key: Key;
  *   lastNode: Element | Text | null;
- *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null;
+ *   prevNode: Element | Text | null | undefined;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -226,18 +224,16 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
- *   child: Vnode | null;
+ *   children: { [key: string]: Vnode } | null;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
- *   key: Key;
  *   lastNode: Element | Text | null;
- *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null;
+ *   prevNode: Element | Text | null | undefined;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -320,18 +316,16 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
- *   child: Vnode | null;
+ *   children: { [key: string]: Vnode } | null;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
- *   key: Key;
  *   lastNode: Element | Text | null;
- *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null;
+ *   prevNode: Element | Text | null | undefined;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -414,18 +408,16 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
- *   child: Vnode | null;
+ *   children: { [key: string]: Vnode } | null;
  *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
- *   key: Key;
  *   lastNode: Element | Text | null;
- *   next: Vnode | null;
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null;
+ *   prevNode: Element | Text | null | undefined;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
