@@ -582,9 +582,9 @@ const update = vnode => {
       }
 
       child.prevNode = prevNode;
+      vnode.children[key] = child;
       updateChild(child);
       if (child.lastNode) prevNode = child.lastNode;
-      vnode.children[key] = child;
     }
   } else vnode.children = null;
   vnode.lastNode = vnode.node ?? prevNode ?? null;
