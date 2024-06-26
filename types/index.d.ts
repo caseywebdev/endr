@@ -51,7 +51,7 @@ export type Vnode = {
     node: Element | Text | null;
     parent: Vnode | null;
     parentNode: Element;
-    prevNode: Element | Text | null | undefined;
+    prevNode: Element | Text | null;
     props: Props;
     refs: Ref<unknown>[] | null;
     state: number;
@@ -141,7 +141,7 @@ export function Fragment(props: {
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null | undefined;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -233,7 +233,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null | undefined;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -325,7 +325,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null | undefined;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -417,7 +417,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   node: Element | Text | null;
  *   parent: Vnode | null;
  *   parentNode: Element;
- *   prevNode: Element | Text | null | undefined;
+ *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
  *   state: number;
@@ -445,7 +445,7 @@ export function memo<Component extends FC>(Component: Component, memo?: typeof d
  * @param {Children} children
  * @param {Element} node
  */
-export function render(children: Children, node: Element): Vnode;
+export function render(children: Children, node: Element): void;
 /**
  * @template {(...args: unknown[]) => unknown} T
  * @param {T} fn
