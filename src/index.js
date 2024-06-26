@@ -558,14 +558,15 @@ const update = vnode => {
         );
         child.index = i;
         if (
-          typeof child.type === 'function' &&
-          child.type.memo?.(child.props, props)
+          child.props !== props &&
+          !(
+            typeof child.type === 'function' &&
+            child.type.memo?.(child.props, props)
+          )
         ) {
-          props = child.props;
-        } else if (child.props !== props) {
           if (child.node) updateNode(child.node, child.props, props);
-          child.state |= needsUpdate;
           child.props = props;
+          child.state |= needsUpdate;
         }
         if (child.lastNode && prevNode !== child.prevNode) {
           const nodes = getNodes(child);
