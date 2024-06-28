@@ -82,7 +82,7 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
 /**
  * @typedef {{
  *   children: { [key: string]: Vnode } | null;
- *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
+ *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
@@ -127,26 +127,27 @@ const Fragment = /** @param {{ children?: Children }} props */ props =>
 const createContext = () => {
   /** @param {{ value: T; children?: Children }} props */
   const Context = ({ value, children }) => {
+    const vnode = /** @type {Vnode} */ (currentVnode);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const context = useMemo(() => {
-      const context = { value, vnodes: /** @type {Set<Vnode>} */ (new Set()) };
-      const vnode = /** @type {Vnode} */ (currentVnode);
+      const context = { deps: /** @type {Set<Vnode>} */ (new Set()), value };
       vnode.contexts = new Map(vnode.contexts).set(Context, context);
       return context;
     });
 
     if (value !== context.value) {
       context.value = value;
-      for (const vnode of context.vnodes) {
-        vnode.state |= needsUpdate;
-        let parent = vnode.parent;
+      for (const dep of context.deps) {
+        dep.state |= needsUpdate;
+        let { parent } = dep;
         while (
           parent &&
-          parent !== currentVnode &&
+          parent !== vnode &&
           !(parent.state & childNeedsUpdate)
         ) {
           parent.state |= childNeedsUpdate;
-          parent = parent.parent;
+          ({ parent } = parent);
         }
       }
     }
@@ -358,11 +359,10 @@ const useState = initial => {
  * @param {unknown[]} after
  */
 const depsChanged = (before, after) => {
-  if (before.length !== after.length) return true;
+  let { length } = before;
+  if (length !== after.length) return true;
 
-  for (let i = 0; i < before.length; ++i) {
-    if (before[i] !== after[i]) return true;
-  }
+  while (length--) if (before[length] !== after[length]) return true;
 
   return false;
 };
@@ -379,15 +379,20 @@ const useCallback = fn => {
 };
 
 /**
- * @param {{ [key: string]: unknown }} prev
- * @param {{ [key: string]: unknown }} next
+ * @param {Props} prev
+ * @param {Props} next
  */
 const defaultMemo = (prev, next) => {
   if (prev === next) return true;
 
-  for (const key in prev) if (prev[key] !== next[key]) return false;
+  const keys = Object.keys(prev);
+  let length = keys.length;
+  if (Object.keys(next).length !== length) return false;
 
-  for (const key in next) if (!(key in prev)) return false;
+  while (length--) {
+    const key = keys[length];
+    if (!(key in next) || prev[key] !== next[key]) return false;
+  }
 
   return true;
 };
@@ -414,8 +419,8 @@ const useContext = Context => {
   useEffect(() => {
     if (!context) return;
 
-    context.vnodes.add(vnode);
-    return () => context.vnodes.delete(vnode);
+    context.deps.add(vnode);
+    return () => context.deps.delete(vnode);
   }, [context, vnode]);
 
   return /** @type {ContextValue<T> | undefined} */ (context?.value);
@@ -513,8 +518,8 @@ const create = (type, props, parent, parentNode, index) => ({
 const updateChild = child => {
   if (child.state & needsUpdate) update(child);
   else if (child.state & childNeedsUpdate) {
-    for (const key in child.children) updateChild(child.children[key]);
     child.state &= ~childNeedsUpdate;
+    for (const key in child.children) updateChild(child.children[key]);
   }
 };
 

@@ -41,8 +41,8 @@ export type Vnode = {
         [key: string]: Vnode;
     } | null;
     contexts: Map<Context<any>, {
+        deps: Set<Vnode>;
         value: any;
-        vnodes: Set<Vnode>;
     }> | null;
     depth: number;
     effects: Effect[] | null;
@@ -133,7 +133,7 @@ export function Fragment(props: {
 /**
  * @typedef {{
  *   children: { [key: string]: Vnode } | null;
- *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
+ *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
@@ -225,7 +225,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   children: { [key: string]: Vnode } | null;
- *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
+ *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
@@ -317,7 +317,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   children: { [key: string]: Vnode } | null;
- *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
+ *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
@@ -409,7 +409,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 /**
  * @typedef {{
  *   children: { [key: string]: Vnode } | null;
- *   contexts: Map<Context<any>, { value: any; vnodes: Set<Vnode> }> | null;
+ *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
@@ -478,12 +478,8 @@ export function useRef<T>(initial: T): Ref<T>;
  */
 export function useState<T>(initial: T): [T, (next: T | ((current: T) => T)) => T];
 /**
- * @param {{ [key: string]: unknown }} prev
- * @param {{ [key: string]: unknown }} next
+ * @param {Props} prev
+ * @param {Props} next
  */
-declare function defaultMemo(prev: {
-    [key: string]: unknown;
-}, next: {
-    [key: string]: unknown;
-}): boolean;
+declare function defaultMemo(prev: Props, next: Props): boolean;
 export {};
