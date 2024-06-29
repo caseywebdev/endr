@@ -544,7 +544,6 @@ const update = vnode => {
   const parentNode = /** @type {Element} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
   vnode.state &= ~(needsUpdate | childNeedsUpdate);
-  vnode.children = null;
   let prevNode = vnode.node ? null : vnode.prevNode;
   if (defs.length) {
     vnode.children = {};
@@ -586,7 +585,7 @@ const update = vnode => {
       updateChild(child);
       if (child.lastNode) prevNode = child.lastNode;
     }
-  } else vnode.children = null;
+  } else if (prevChildren) vnode.children = null;
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
   if (prevChildren) {
