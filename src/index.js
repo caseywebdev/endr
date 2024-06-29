@@ -589,7 +589,7 @@ const update = vnode => {
   } else vnode.children = null;
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  if (prevChildren && Object.keys(prevChildren).length) {
+  if (prevChildren) {
     const clearAll = vnode.node && !vnode.children;
     for (const key in prevChildren) remove(prevChildren[key], !clearAll);
     if (clearAll) /** @type {Element} */ (vnode.node).replaceChildren();
