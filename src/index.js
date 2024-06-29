@@ -385,14 +385,9 @@ const useCallback = fn => {
 const defaultMemo = (prev, next) => {
   if (prev === next) return true;
 
-  const keys = Object.keys(prev);
-  let length = keys.length;
-  if (Object.keys(next).length !== length) return false;
+  for (const key in prev) if (prev[key] !== next[key]) return false;
 
-  while (length--) {
-    const key = keys[length];
-    if (!(key in next) || prev[key] !== next[key]) return false;
-  }
+  for (const key in next) if (!(key in prev)) return false;
 
   return true;
 };
