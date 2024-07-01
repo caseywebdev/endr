@@ -278,9 +278,30 @@ const updateNode = (node, prev, next) => {
   }
 };
 
-let currentVnode = /** @type {Vnode | null} */ (null);
+/** @type {Vnode | null} */
+let currentVnode = null;
+
 let effectIndex = 0;
+
 let refIndex = 0;
+
+/** @type {(Element | Text)[]} */
+let removeQueue = [];
+
+/** @type {Vnode[]} */
+let moveQueue = [];
+
+/** @type {{ vnode: Vnode; prevProps: Props }[]} */
+let nodeUpdateQueue = [];
+
+/** @type {Vnode[]} */
+let insertQueue = [];
+
+/** @type {Effect[]} */
+let afterEffectQueue = [];
+
+/** @type {Vnode[]} */
+let updateQueue = [];
 
 /**
  * @template T
@@ -435,9 +456,6 @@ const batchComparator = (a, b) => {
   return a.index - b.index;
 };
 
-/** @type {Vnode[]} */
-let updateQueue = [];
-
 /** @param {Vnode} vnode */
 const queueUpdate = vnode => {
   if (vnode.state & needsUpdate) return;
@@ -452,6 +470,7 @@ const queueUpdate = vnode => {
           update(vnode);
         }
       }
+      flush();
     });
   }
   updateQueue.push(vnode);
@@ -510,10 +529,11 @@ const create = (type, props, parent, parentNode, index) => ({
 
 /** @param {Vnode} child */
 const updateChild = child => {
-  if (child.state & needsUpdate) update(child);
-  else if (child.state & childNeedsUpdate) {
+  const { state, children } = child;
+  if (state & needsUpdate) update(child);
+  else if (state & childNeedsUpdate) {
     child.state &= ~childNeedsUpdate;
-    for (const key in child.children) updateChild(child.children[key]);
+    for (const key in children) updateChild(children[key]);
   }
 };
 
@@ -550,6 +570,9 @@ const update = vnode => {
       let { type, props, key } = normalizeDef(defs[i]);
       key = key == null ? `-${i}` : `+${key}`;
       let child = prevChildren?.[key];
+      let needsMove = false;
+      let nodeUpdatePrevProps = null;
+      let needsInsert = false;
       if (child?.type === type) {
         delete (
           /** @type {NonNullable<Vnode['children']>} */ (prevChildren)[key]
@@ -562,44 +585,35 @@ const update = vnode => {
             child.type.memo?.(child.props, props)
           )
         ) {
-          if (child.node) updateNode(child.node, child.props, props);
+          if (child.node) nodeUpdatePrevProps = child.props;
           child.props = props;
           child.state |= needsUpdate;
         }
-        if (child.lastNode && prevNode !== child.prevNode) {
-          const nodes = getNodes(child);
-          if (prevNode) prevNode.after(...nodes);
-          else parentNode.prepend(...nodes);
-        }
+        if (child.lastNode && prevNode !== child.prevNode) needsMove = true;
       } else {
         child = create(type, props, vnode, parentNode, i);
-        if (child.node) {
-          if (prevNode) prevNode.after(child.node);
-          else parentNode.prepend(child.node);
-        }
+        if (child.node) needsInsert = true;
       }
 
       child.prevNode = prevNode;
       vnode.children[key] = child;
       updateChild(child);
+      if (needsMove) moveQueue.push(child);
+      if (nodeUpdatePrevProps) {
+        nodeUpdateQueue.push({ vnode: child, prevProps: nodeUpdatePrevProps });
+      }
+      if (needsInsert) insertQueue.push(child);
       if (child.lastNode) prevNode = child.lastNode;
     }
   } else vnode.children = null;
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  if (prevChildren) {
-    const clearAll = vnode.node && !vnode.children;
-    for (const key in prevChildren) remove(prevChildren[key], !clearAll);
-    if (clearAll) /** @type {Element} */ (vnode.node).replaceChildren();
-  }
+  for (const key in prevChildren) remove(prevChildren[key], true);
 
   if (vnode.effects) {
     for (let i = 0; i < vnode.effects.length; ++i) {
       const effect = vnode.effects[i];
-      if (effect.after) {
-        effect.before = effect.after();
-        effect.after = undefined;
-      }
+      if (effect.after) afterEffectQueue.push(effect);
     }
   }
 };
@@ -609,9 +623,11 @@ const update = vnode => {
  * @param {boolean} removeNode
  */
 const remove = (vnode, removeNode) => {
-  if (vnode.effects) {
-    for (let i = 0; i < vnode.effects.length; ++i) {
-      const effect = vnode.effects[i];
+  const { effects, children, node } = vnode;
+
+  if (effects) {
+    for (let i = 0; i < effects.length; ++i) {
+      const effect = effects[i];
       if (effect.before) {
         effect.before();
         effect.before = undefined;
@@ -619,13 +635,54 @@ const remove = (vnode, removeNode) => {
     }
   }
 
-  const childRemoveNode = removeNode && !vnode.node;
+  const removeChildNode = removeNode && !node;
 
-  for (const key in vnode.children) {
-    remove(vnode.children[key], childRemoveNode);
+  for (const key in children) remove(children[key], removeChildNode);
+
+  if (removeNode && node) removeQueue.unshift(node);
+};
+
+const flush = () => {
+  const removes = removeQueue;
+  removeQueue = [];
+  const moves = moveQueue;
+  moveQueue = [];
+  const nodeUpdates = nodeUpdateQueue;
+  nodeUpdateQueue = [];
+  const inserts = insertQueue;
+  insertQueue = [];
+  const afterEffects = afterEffectQueue;
+  afterEffectQueue = [];
+
+  for (let i = removes.length - 1; i >= 0; --i) removes[i].remove();
+
+  for (let i = 0; i < moves.length; ++i) {
+    const vnode = moves[i];
+    if (vnode.prevNode) vnode.prevNode.after(...getNodes(vnode));
+    else vnode.parentNode.prepend(...getNodes(vnode));
   }
 
-  if (removeNode) vnode.node?.remove();
+  for (let i = 0; i < nodeUpdates.length; ++i) {
+    const { vnode, prevProps } = nodeUpdates[i];
+    updateNode(
+      /** @type {Element | Text} */ (vnode.node),
+      prevProps,
+      vnode.props
+    );
+  }
+
+  for (let i = 0; i < inserts.length; ++i) {
+    const vnode = inserts[i];
+    if (vnode.prevNode) {
+      vnode.prevNode.after(/** @type {Element | Text} */ (vnode.node));
+    } else vnode.parentNode.prepend(/** @type {Element | Text} */ (vnode.node));
+  }
+
+  for (let i = 0; i < afterEffects.length; ++i) {
+    const effect = afterEffects[i];
+    effect.before = /** @type {AfterEffect} */ (effect.after)();
+    effect.after = undefined;
+  }
 };
 
 /**
@@ -634,6 +691,7 @@ const remove = (vnode, removeNode) => {
  */
 const render = (children, node) => {
   update(create(Fragment, { children }, null, node, 0));
+  flush();
 };
 
 // eslint-disable-next-line import/no-named-export
