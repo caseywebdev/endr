@@ -466,7 +466,6 @@ const getDefs = vnode => {
     effectIndex = 0;
     refIndex = 0;
     children = vnode.type(vnode.props);
-    currentVnode = null;
   }
   return isEmpty(children)
     ? []
@@ -585,7 +584,7 @@ const update = vnode => {
       updateChild(child);
       if (child.lastNode) prevNode = child.lastNode;
     }
-  } else if (prevChildren) vnode.children = null;
+  } else vnode.children = null;
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
   if (prevChildren) {
