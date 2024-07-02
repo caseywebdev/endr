@@ -93,7 +93,7 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
  *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
- *   state: number;
+ *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
  *   type: Type;
  * }} Vnode
  */
@@ -109,10 +109,6 @@ const jsx = (type, props = /** @type {Props<T>} */ (emptyProps), key) => ({
   props,
   key
 });
-
-const needsUpdate = 1 << 0;
-const childNeedsUpdate = 1 << 1;
-const deleted = 1 << 2;
 
 const jsxs = jsx;
 
@@ -139,14 +135,10 @@ const createContext = () => {
     if (value !== context.value) {
       context.value = value;
       for (const dep of context.deps) {
-        dep.state |= needsUpdate;
+        dep.state = 1;
         let { parent } = dep;
-        while (
-          parent &&
-          parent !== vnode &&
-          !(parent.state & childNeedsUpdate)
-        ) {
-          parent.state |= childNeedsUpdate;
+        while (parent && parent !== vnode && !parent.state) {
+          parent.state = 2;
           ({ parent } = parent);
         }
       }
@@ -458,7 +450,7 @@ const batchComparator = (a, b) => {
 
 /** @param {Vnode} vnode */
 const queueUpdate = vnode => {
-  if (vnode.state & needsUpdate) return;
+  if (vnode.state === 1 || vnode.state === 3) return;
 
   if (updateQueue.length === 0) {
     queueMicrotask(() => {
@@ -466,15 +458,13 @@ const queueUpdate = vnode => {
       updateQueue = [];
       for (let i = 0; i < batch.length; ++i) {
         const vnode = batch[i];
-        if (vnode.state & needsUpdate && !(vnode.state & deleted)) {
-          update(vnode);
-        }
+        if (vnode.state === 1) update(vnode);
       }
       flush();
     });
   }
   updateQueue.push(vnode);
-  vnode.state |= needsUpdate;
+  vnode.state = 1;
 };
 
 /** @param {Vnode} vnode */
@@ -523,16 +513,16 @@ const create = (type, props, parent, parentNode, index) => ({
   prevNode: null,
   props: props,
   refs: null,
-  state: needsUpdate,
+  state: /** @type {const} */ (1),
   type: type
 });
 
 /** @param {Vnode} child */
 const updateChild = child => {
   const { state, children } = child;
-  if (state & needsUpdate) update(child);
-  else if (state & childNeedsUpdate) {
-    child.state &= ~childNeedsUpdate;
+  if (state === 1) update(child);
+  else if (state === 2) {
+    child.state = 0;
     for (const key in children) updateChild(children[key]);
   }
 };
@@ -562,7 +552,7 @@ const update = vnode => {
   const prevChildren = vnode.children;
   const parentNode = /** @type {Element} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
-  vnode.state &= ~(needsUpdate | childNeedsUpdate);
+  vnode.state = 0;
   let prevNode = vnode.node ? null : vnode.prevNode;
   if (defs.length) {
     vnode.children = {};
@@ -587,7 +577,7 @@ const update = vnode => {
         ) {
           if (child.node) nodeUpdatePrevProps = child.props;
           child.props = props;
-          child.state |= needsUpdate;
+          child.state = 1;
         }
         if (child.lastNode && prevNode !== child.prevNode) needsMove = true;
       } else {
@@ -623,6 +613,8 @@ const update = vnode => {
  * @param {boolean} removeNode
  */
 const remove = (vnode, removeNode) => {
+  vnode.state = 3;
+
   const { effects, children, node } = vnode;
 
   if (effects) {

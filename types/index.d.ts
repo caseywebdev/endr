@@ -54,7 +54,7 @@ export type Vnode = {
     prevNode: Element | Text | null;
     props: Props;
     refs: Ref<unknown>[] | null;
-    state: number;
+    state: 0 | 1 | 2 | 3;
     type: Type;
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
@@ -144,7 +144,7 @@ export function Fragment(props: {
  *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
- *   state: number;
+ *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
  *   type: Type;
  * }} Vnode
  */
@@ -236,7 +236,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
- *   state: number;
+ *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
  *   type: Type;
  * }} Vnode
  */
@@ -328,7 +328,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
- *   state: number;
+ *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
  *   type: Type;
  * }} Vnode
  */
@@ -420,7 +420,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   prevNode: Element | Text | null;
  *   props: Props;
  *   refs: Ref<unknown>[] | null;
- *   state: number;
+ *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
  *   type: Type;
  * }} Vnode
  */
