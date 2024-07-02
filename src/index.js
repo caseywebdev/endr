@@ -511,10 +511,10 @@ const create = (type, props, parent, parentNode, index) => ({
   parent,
   parentNode,
   prevNode: null,
-  props: props,
+  props,
   refs: null,
   state: /** @type {const} */ (1),
-  type: type
+  type
 });
 
 /** @param {Vnode} vnode */
