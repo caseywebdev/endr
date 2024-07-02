@@ -58,7 +58,7 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
  *       : UnknownElementProps} Props
  */
 
-/** @typedef {string | number | boolean | undefined} Key */
+/** @typedef {any} Key */
 
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 
@@ -81,7 +81,7 @@ const { CSSStyleDeclaration, document, queueMicrotask, Text } = globalThis;
 
 /**
  * @typedef {{
- *   children: { [key: string]: Vnode } | null;
+ *   children: Map<Key, Vnode> | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
@@ -517,13 +517,13 @@ const create = (type, props, parent, parentNode, index) => ({
   type: type
 });
 
-/** @param {Vnode} child */
-const updateChild = child => {
-  const { state, children } = child;
-  if (state === 1) update(child);
+/** @param {Vnode} vnode */
+const updateChild = vnode => {
+  const { state, children } = vnode;
+  if (state === 1) update(vnode);
   else if (state === 2) {
-    child.state = 0;
-    for (const key in children) updateChild(children[key]);
+    vnode.state = 0;
+    if (children) for (const child of children.values()) updateChild(child);
   }
 };
 
@@ -533,7 +533,9 @@ const getNodes = ({ children, node }) => {
 
   /** @type {(Element | Text)[]} */
   const nodes = [];
-  for (const key in children) nodes.push(...getNodes(children[key]));
+  if (children) {
+    for (const child of children.values()) nodes.push(...getNodes(child));
+  }
   return nodes;
 };
 
@@ -555,17 +557,16 @@ const update = vnode => {
   vnode.state = 0;
   let prevNode = vnode.node ? null : vnode.prevNode;
   if (defs.length) {
-    vnode.children = {};
+    vnode.children = new Map();
     for (let i = 0; i < defs.length; ++i) {
-      let { type, props, key } = normalizeDef(defs[i]);
-      key = key == null ? `-${i}` : `+${key}`;
-      let child = prevChildren?.[key];
+      const { type, props, key = i } = normalizeDef(defs[i]);
+      let child = prevChildren?.get(key);
       let needsMove = false;
       let nodeUpdatePrevProps = null;
       let needsInsert = false;
       if (child?.type === type) {
-        delete (
-          /** @type {NonNullable<Vnode['children']>} */ (prevChildren)[key]
+        /** @type {NonNullable<Vnode['children']>} */ (prevChildren).delete(
+          key
         );
         child.index = i;
         if (
@@ -586,7 +587,7 @@ const update = vnode => {
       }
 
       child.prevNode = prevNode;
-      vnode.children[key] = child;
+      vnode.children.set(key, child);
       updateChild(child);
       if (needsMove) moveQueue.push(child);
       if (nodeUpdatePrevProps) {
@@ -598,7 +599,9 @@ const update = vnode => {
   } else vnode.children = null;
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  for (const key in prevChildren) remove(prevChildren[key], true);
+  if (prevChildren) {
+    for (const child of prevChildren.values()) remove(child, true);
+  }
 
   if (vnode.effects) {
     for (let i = 0; i < vnode.effects.length; ++i) {
@@ -629,7 +632,9 @@ const remove = (vnode, removeNode) => {
 
   const removeChildNode = removeNode && !node;
 
-  for (const key in children) remove(children[key], removeChildNode);
+  if (children) {
+    for (const child of children.values()) remove(child, removeChildNode);
+  }
 
   if (removeNode && node) removeQueue.unshift(node);
 };

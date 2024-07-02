@@ -20,7 +20,7 @@ export type UnknownElementProps = SharedElementProps & {
     [key: string]: unknown;
 };
 export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? HTMLElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? SVGElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
-export type Key = string | number | boolean | undefined;
+export type Key = any;
 export type Def = {
     type: Type;
     props: Props;
@@ -37,9 +37,7 @@ export type Effect = {
     deps: unknown[] | undefined;
 };
 export type Vnode = {
-    children: {
-        [key: string]: Vnode;
-    } | null;
+    children: Map<Key, Vnode> | null;
     contexts: Map<Context<any>, {
         deps: Set<Vnode>;
         value: any;
@@ -115,7 +113,7 @@ export function Fragment(props: {
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
  *       : UnknownElementProps} Props
  */
-/** @typedef {string | number | boolean | undefined} Key */
+/** @typedef {any} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -132,7 +130,7 @@ export function Fragment(props: {
  */
 /**
  * @typedef {{
- *   children: { [key: string]: Vnode } | null;
+ *   children: Map<Key, Vnode> | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
@@ -157,7 +155,7 @@ export function Fragment(props: {
 export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: Key;
+    key: any;
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
@@ -207,7 +205,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
  *       : UnknownElementProps} Props
  */
-/** @typedef {string | number | boolean | undefined} Key */
+/** @typedef {any} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -224,7 +222,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
- *   children: { [key: string]: Vnode } | null;
+ *   children: Map<Key, Vnode> | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
@@ -249,7 +247,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: Key;
+    key: any;
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
@@ -299,7 +297,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
  *       : UnknownElementProps} Props
  */
-/** @typedef {string | number | boolean | undefined} Key */
+/** @typedef {any} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -316,7 +314,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
- *   children: { [key: string]: Vnode } | null;
+ *   children: Map<Key, Vnode> | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
@@ -341,7 +339,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: Key;
+    key: any;
 };
 /** @typedef {Def | string | number | false | null | undefined} Child */
 /** @typedef {Child | Child[]} Children */
@@ -391,7 +389,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *       ? SVGElementProps<SVGElementTagNameMap[T]>
  *       : UnknownElementProps} Props
  */
-/** @typedef {string | number | boolean | undefined} Key */
+/** @typedef {any} Key */
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 /**
  * @template T
@@ -408,7 +406,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
- *   children: { [key: string]: Vnode } | null;
+ *   children: Map<Key, Vnode> | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
  *   effects: Effect[] | null;
@@ -433,7 +431,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
 export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: Key;
+    key: any;
 };
 /**
  * @template {FC} Component
