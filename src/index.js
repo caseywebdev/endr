@@ -441,8 +441,8 @@ const useContext = Context => {
  * @param {Vnode} b
  */
 const batchComparator = (a, b) => {
-  while (a.depth < b.depth) a = /** @type {Vnode} */ (a.parent);
-  while (b.depth < a.depth) b = /** @type {Vnode} */ (b.parent);
+  while (a.depth > b.depth) a = /** @type {Vnode} */ (a.parent);
+  while (b.depth > a.depth) b = /** @type {Vnode} */ (b.parent);
   while (a.parent !== b.parent) {
     a = /** @type {Vnode} */ (a.parent);
     b = /** @type {Vnode} */ (b.parent);
@@ -567,8 +567,11 @@ const update = vnode => {
   vnode.state = 0;
   vnode.child = null;
   let prevNode = vnode.node ? null : vnode.prevNode;
-  let prevChild = /** @type {Vnode | null} */ (null);
-  for (let i = 0; i < defs.length; ++i) {
+  for (
+    let i = 0, prevChild = /** @type {Vnode | null} */ (null);
+    i < defs.length;
+    ++i
+  ) {
     const { type, props, key } = normalizeDef(defs[i]);
     let child = prevChildren?.get(key ?? i);
     let needsMove = false;
