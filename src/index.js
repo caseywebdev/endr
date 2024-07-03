@@ -442,15 +442,13 @@ const useContext = Context => {
  */
 const batchComparator = (a, b) => {
   while (a.depth > b.depth) {
-    if (a.parent === b) return 1;
-
     a = /** @type {Vnode} */ (a.parent);
+    if (a === b) return 1;
   }
 
   while (b.depth > a.depth) {
-    if (b.parent === a) return -1;
-
     b = /** @type {Vnode} */ (b.parent);
+    if (b === a) return -1;
   }
 
   while (a.parent !== b.parent) {
