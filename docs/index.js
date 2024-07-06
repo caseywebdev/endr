@@ -30,11 +30,13 @@ const Random = memo(({ x, y }) => {
   return (
     <div
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      onpointermove={useCallback(() => {
+      onpointermove={() => {
         setColor(activeColor);
         clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => setColor('black'), 5000);
-      })}
+      }}
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ontouchmove={ev => ev.preventDefault()}
       style={{
         backgroundColor: color,
         transition: color === 'black' ? 'all 5s' : '',

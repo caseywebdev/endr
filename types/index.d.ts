@@ -455,10 +455,10 @@ export function memo<Component extends FC>(Component: Component, memo?: ((prev: 
  */
 export function render(children: Children, node: Element): void;
 /**
- * @template {(...args: unknown[]) => unknown} T
+ * @template {(...args: any[]) => any} T
  * @param {T} fn
  */
-export function useCallback<T extends (...args: unknown[]) => unknown>(fn: T): T;
+export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
 /**
  * @template {Context<any>} T
  * @param {T} Context

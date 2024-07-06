@@ -1,7 +1,7 @@
 # Endr
 An **En**gine for **D**OM **R**ecombobulation.
 
-```js
+```jsx
 import { render, useState } from 'endr';
 
 const Root = () => {

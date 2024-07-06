@@ -383,7 +383,7 @@ const depsChanged = (before, after) => {
 };
 
 /**
- * @template {(...args: unknown[]) => unknown} T
+ * @template {(...args: any[]) => any} T
  * @param {T} fn
  */
 const useCallback = fn => {
