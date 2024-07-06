@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+open http://localhost:8000/docs/index.html
+node_modules/.bin/esbuild \
+  --bundle \
+  --jsx-import-source=endr \
+  --jsx=automatic \
+  --loader:.js=jsx \
+  --minify \
+  --outfile=docs/dist.js \
+  --watch=forever \
+  docs/index.js &
+python3 -m http.server
+kill $!

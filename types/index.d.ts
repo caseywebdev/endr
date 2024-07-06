@@ -448,7 +448,7 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @param {Component} Component
  * @param {typeof defaultMemo} [memo]
  */
-export function memo<Component extends FC>(Component: Component, memo?: typeof defaultMemo): Component;
+export function memo<Component extends FC>(Component: Component, memo?: ((prev: Props, next: Props) => boolean) | undefined): Component;
 /**
  * @param {Children} children
  * @param {Element} node
@@ -468,7 +468,7 @@ export function useContext<T extends Context<any>>(Context: T): ContextValue<T> 
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]
  */
-export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
+export function useEffect(fn: AfterEffect, deps?: unknown[] | undefined): void;
 /**
  * @template T
  * @param {(...args: unknown[]) => T} fn
@@ -485,9 +485,3 @@ export function useRef<T>(initial: T): Ref<T>;
  * @param {T} initial
  */
 export function useState<T>(initial: T): [T, (next: T | ((current: T) => T)) => T];
-/**
- * @param {Props} prev
- * @param {Props} next
- */
-declare function defaultMemo(prev: Props, next: Props): boolean;
-export {};

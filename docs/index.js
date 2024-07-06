@@ -1,6 +1,5 @@
 import {
   createContext,
-  jsx,
   memo,
   render,
   useCallback,
@@ -9,7 +8,7 @@ import {
   useMemo,
   useRef,
   useState
-} from './index.js';
+} from 'endr';
 
 const { clearTimeout, setTimeout, setInterval } = globalThis;
 
@@ -28,23 +27,26 @@ const Random = memo(({ x, y }) => {
   const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
   const [color, setColor] = useState('black');
 
-  return jsx('div', {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    onmousemove: useCallback(() => {
-      setColor(activeColor);
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setColor('black'), 5000);
-    }),
-    style: {
-      backgroundColor: color,
-      transition: color === 'black' ? 'all 5s' : '',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      overflow: 'hidden'
-    },
-    children: now
-  });
+  return (
+    <div
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      onpointermove={useCallback(() => {
+        setColor(activeColor);
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+      })}
+      style={{
+        backgroundColor: color,
+        transition: color === 'black' ? 'all 5s' : '',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden'
+      }}
+    >
+      {now}
+    </div>
+  );
 });
 
 const Context = /** @type {typeof createContext<number>} */ (createContext)();
@@ -56,24 +58,26 @@ const Root = () => {
     setInterval(() => setNow(new Date().getSeconds()), 1000);
   });
 
-  return jsx(Context, {
-    value: now,
-    children: jsx('div', {
-      style: {
-        cursor: 'crosshair',
-        display: 'grid',
-        gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
-        height: '100%'
-      },
-      children: Array.from({ length: resolution * resolution }, (_, i) =>
-        jsx(Random, { x: i % resolution, y: Math.floor(i / resolution) })
-      )
-    })
-  });
+  return (
+    <Context value={now}>
+      <div
+        style={{
+          cursor: 'crosshair',
+          display: 'grid',
+          gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
+          height: '100%'
+        }}
+      >
+        {Array.from({ length: resolution * resolution }, (_, i) => (
+          <Random key={i} x={i % resolution} y={Math.floor(i / resolution)} />
+        ))}
+      </div>
+    </Context>
+  );
 };
 
 render(
-  jsx(Root),
+  <Root />,
   /** @type {HTMLDivElement} */ (
     globalThis.window.document.getElementById('root')
   )
