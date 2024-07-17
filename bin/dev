@@ -1,6 +1,9 @@
 #!/bin/sh -e
 
 open http://localhost:8000/docs/index.html
+
+bin/tsc
+
 node_modules/.bin/esbuild \
   --bundle \
   --jsx-import-source=endr \
@@ -10,5 +13,7 @@ node_modules/.bin/esbuild \
   --outfile=docs/dist.js \
   --watch=forever \
   docs/index.js &
+
 python3 -m http.server
+
 kill $!

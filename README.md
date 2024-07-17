@@ -53,8 +53,7 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
 - `setState` will not queue a re-render when it is called during the render
   function.
 - The `jsx: 'automatic'` setting for JSX transpilers is required if using JSX.
-  This is a performance optimization that React also intends to adopt in the
-  future.
 - There is no `useLayoutEffect`.
-- `useEffect` is called immediately after the DOM is updated for the current
-  component.
+- `useEffect` is called immediately after the DOM is reconciled.
+- Portals can be used with the `Portal` component instead of `createPortal`.
+  - `<Portal to={parentElement}><div /></Portal>` is equivalent to `createPortal(<div />, parentElement)`

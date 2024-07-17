@@ -449,6 +449,10 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @param {typeof defaultMemo} [memo]
  */
 export function memo<Component extends FC>(Component: Component, memo?: ((prev: Props, next: Props) => boolean) | undefined): Component;
+export function Portal(props: {
+    children?: Children;
+    to: Element;
+}): Children;
 /**
  * @param {Children} children
  * @param {Element} node

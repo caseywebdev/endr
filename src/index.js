@@ -121,6 +121,10 @@ const jsxsDEV = jsx;
 const Fragment = /** @param {{ children?: Children }} props */ props =>
   props.children;
 
+const Portal =
+  /** @param {{ children?: Children; to: Element }} props */ props =>
+    props.children;
+
 /** @template T */
 const createContext = () => {
   /** @param {{ value: T; children?: Children }} props */
@@ -606,20 +610,37 @@ const update = vnode => {
         child.props = props;
         child.state = 1;
       }
-      if (child.lastNode && prevNode !== child.prevNode) needsMove = true;
+      if (
+        child.parentNode === parentNode &&
+        child.lastNode &&
+        prevNode !== child.prevNode
+      ) {
+        needsMove = true;
+      }
     } else {
-      child = create(type, props, key, vnode, parentNode, i);
+      child = create(
+        type,
+        props,
+        key,
+        vnode,
+        type === Portal
+          ? /** @type {Props<typeof Portal>} */ (props).to
+          : parentNode,
+        i
+      );
       if (child.node) needsInsert = true;
     }
 
-    child.prevNode = prevNode;
+    if (child.parentNode === parentNode) child.prevNode = prevNode;
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
     updateChild(child);
     if (needsMove) moveQueue.push(child);
     if (nodeUpdate) nodeUpdateQueue.push(nodeUpdate);
     if (needsInsert) insertQueue.push(child);
-    if (child.lastNode) prevNode = child.lastNode;
+    if (child.parentNode === parentNode && child.lastNode) {
+      prevNode = child.lastNode;
+    }
     prevChild = child;
   }
   vnode.lastNode = vnode.node ?? prevNode ?? null;
@@ -716,6 +737,7 @@ export {
   jsxs,
   jsxsDEV,
   memo,
+  Portal,
   render,
   useCallback,
   useContext,

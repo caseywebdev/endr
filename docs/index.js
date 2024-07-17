@@ -1,8 +1,8 @@
 import {
+  Portal,
   createContext,
   memo,
   render,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -10,13 +10,13 @@ import {
   useState
 } from 'endr';
 
-const { clearTimeout, setTimeout, setInterval } = globalThis;
+const { clearTimeout, document, setTimeout, setInterval } = globalThis;
 
 const resolution = 10;
 
 /** @param {{ x: number; y: number }} props */
 const Random = memo(({ x, y }) => {
-  const now = useContext(Context);
+  const now = useContext(Context) ?? 0;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const activeColor = useMemo(
     () =>
@@ -28,28 +28,49 @@ const Random = memo(({ x, y }) => {
   const [color, setColor] = useState('black');
 
   return (
-    <div
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      onpointermove={() => {
-        setColor(activeColor);
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => setColor('black'), 5000);
-      }}
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      ontouchmove={ev => ev.preventDefault()}
-      style={{
-        backgroundColor: color,
-        transition: color === 'black' ? 'all 5s' : '',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden'
-      }}
-    >
-      {now}
-    </div>
+    <>
+      <div
+        onpointermove={() => {
+          setColor(activeColor);
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+        }}
+        ontouchmove={ev => ev.preventDefault()}
+        style={{
+          backgroundColor: color,
+          transition: color === 'black' ? 'all 5s' : '',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          overflow: 'hidden'
+        }}
+      >
+        {now}
+      </div>
+      {x === 1 && y === 1 && !!(now % 5) && <Portaled />}
+    </>
   );
 });
+
+const Portaled = () => {
+  const now = useContext(Context);
+
+  return (
+    <Portal
+      to={/** @type {HTMLDivElement} */ (document.getElementById('portal'))}
+    >
+      <div
+        style={{
+          background: '#fff9',
+          borderRadius: '0.25rem',
+          padding: '1rem'
+        }}
+      >
+        Portal: {now}
+      </div>
+    </Portal>
+  );
+};
 
 const Context = /** @type {typeof createContext<number>} */ (createContext)();
 
@@ -80,7 +101,5 @@ const Root = () => {
 
 render(
   <Root />,
-  /** @type {HTMLDivElement} */ (
-    globalThis.window.document.getElementById('root')
-  )
+  /** @type {HTMLDivElement} */ (document.getElementById('root'))
 );

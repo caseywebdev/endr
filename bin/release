@@ -2,15 +2,7 @@
 
 node_modules/.bin/eslint src/index.js
 
-node_modules/.bin/tsc \
-  --allowJs \
-  --checkJs \
-  --declaration \
-  --declarationDir types \
-  --emitDeclarationOnly \
-  --strict \
-  --target ESNext \
-  src/index.js
+bin/tsc
 
 bumpit
 
