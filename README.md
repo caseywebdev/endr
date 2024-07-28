@@ -57,3 +57,5 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
 - `useEffect` is called immediately after the DOM is reconciled.
 - Portals can be used with the `Portal` component instead of `createPortal`.
   - `<Portal to={parentElement}><div /></Portal>` is equivalent to `createPortal(<div />, parentElement)`
+- Errors thrown during render can be caught by the nearest Catcher component.
+  - `<Catcher onError={setError}>error ? 'It broke' : <AllMyChildren /></Catcher>` can be used, for example, to show an "It broke" message whenever rendering `<AllMyChildren />` or any descendents throws an error.

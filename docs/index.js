@@ -1,4 +1,5 @@
 import {
+  Catch,
   Portal,
   createContext,
   memo,
@@ -14,9 +15,23 @@ const { clearTimeout, document, setTimeout, setInterval } = globalThis;
 
 const resolution = 10;
 
+const FlakyNow = () => {
+  if (Math.random() < 0.01) throw new Error('red');
+
+  useEffect(() => {
+    if (Math.random() < 0.01) throw new Error('blue');
+    return () => {
+      if (Math.random() < 0.01) throw new Error('yellow');
+    };
+  });
+
+  return useContext(Context) ?? 0;
+};
+
 /** @param {{ x: number; y: number }} props */
-const Random = memo(({ x, y }) => {
+const Tile = memo(({ x, y }) => {
   const now = useContext(Context) ?? 0;
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const activeColor = useMemo(
     () =>
@@ -28,7 +43,15 @@ const Random = memo(({ x, y }) => {
   const [color, setColor] = useState('black');
 
   return (
-    <>
+    <Catch
+      onError={
+        /** @param {Error} er */ er => {
+          setColor(er.message);
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+        }
+      }
+    >
       <div
         onpointermove={() => {
           setColor(activeColor);
@@ -45,10 +68,18 @@ const Random = memo(({ x, y }) => {
           overflow: 'hidden'
         }}
       >
-        {now}
+        {color === 'red' ? (
+          'Render Error'
+        ) : color === 'blue' ? (
+          'After Effect Error'
+        ) : color === 'yellow' ? (
+          'Before Effect Error'
+        ) : (
+          <FlakyNow />
+        )}
+        {x === 1 && y === 1 && !!(now % 5) && <Portaled />}
       </div>
-      {x === 1 && y === 1 && !!(now % 5) && <Portaled />}
-    </>
+    </Catch>
   );
 });
 
@@ -92,7 +123,7 @@ const Root = () => {
         }}
       >
         {Array.from({ length: resolution * resolution }, (_, i) => (
-          <Random key={i} x={i % resolution} y={Math.floor(i / resolution)} />
+          <Tile key={i} x={i % resolution} y={Math.floor(i / resolution)} />
         ))}
       </div>
     </Context>
