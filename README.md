@@ -56,6 +56,25 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
 - Portals can be used with the `Portal` component instead of `createPortal`.
-  - `<Portal to={parentElement}><div /></Portal>` is equivalent to `createPortal(<div />, parentElement)`
-- Errors thrown during render can be caught by the nearest Catcher component.
-  - `<Catcher onError={setError}>error ? 'It broke' : <AllMyChildren /></Catcher>` can be used, for example, to show an "It broke" message whenever rendering `<AllMyChildren />` or any descendents throws an error.
+  - ```js
+    <Portal to={parentElement}><div /></Portal>
+    ```
+    is equivalent to React's
+    ```js
+    createPortal(<div />, parentElement)
+    ```
+- Errors thrown during render can be caught by the nearest ErrorBoundary component.
+  - ```js
+    const MyComponent () => {
+      const [error, setError] = useState(undefined);
+      return (
+        <ErrorBoundary onError={setError}>
+          {error ? 'It broke' : <AllMyChildren />}
+        </ErrorBoundary>
+      );
+    };
+    ```
+    can be used, for example, to show an "It broke" message whenever rendering
+    `<AllMyChildren />` or any descendents throws an error.
+  - React's `Suspense` can be recreated with `ErrorBoundary` by awaiting all thrown
+    promises, if desired.

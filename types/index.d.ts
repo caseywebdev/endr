@@ -60,16 +60,16 @@ export type Vnode = {
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
 export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
-/** @param {{ children?: Children; onError: Vnode['onError'] }} props */
-export function Catcher(props: {
-    children?: Children;
-    onError: Vnode["onError"];
-}): Children;
 /** @template T */
 export function createContext<T>(): ({ value, children }: {
     value: T;
     children?: Children;
 }) => Children;
+/** @param {{ children?: Children; onError: Vnode['onError'] }} props */
+export function ErrorBoundary(props: {
+    children?: Children;
+    onError: Vnode["onError"];
+}): Children;
 /** @param {{ children?: Children }} props */
 export function Fragment(props: {
     children?: Children;

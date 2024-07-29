@@ -127,7 +127,7 @@ const Fragment = props => props.children;
 const Portal = props => props.children;
 
 /** @param {{ children?: Children; onError: Vnode['onError'] }} props */
-const Catcher = props => {
+const ErrorBoundary = props => {
   /** @type {Vnode} */ (currentVnode).onError = props.onError;
   return props.children;
 };
@@ -759,8 +759,8 @@ const render = (children, node) => {
 
 // eslint-disable-next-line import/no-named-export
 export {
-  Catcher,
   createContext,
+  ErrorBoundary,
   Fragment,
   jsx,
   jsxDEV,
