@@ -11,11 +11,14 @@ import {
   useState
 } from 'endr';
 
+/** @import {Children} from 'endr' */
+
 const { clearTimeout, document, setTimeout, setInterval } = globalThis;
 
 const resolution = 10;
 
-const FlakyNow = () => {
+/** @param {{ children: Children }} props */
+const Flaky = ({ children }) => {
   if (Math.random() < 0.01) throw new Error('red');
 
   useEffect(() => {
@@ -25,7 +28,7 @@ const FlakyNow = () => {
     };
   });
 
-  return useContext(Context) ?? 0;
+  return children;
 };
 
 /** @param {{ x: number; y: number }} props */
@@ -75,7 +78,7 @@ const Tile = memo(({ x, y }) => {
         ) : color === 'yellow' ? (
           'Before Effect Error'
         ) : (
-          <FlakyNow />
+          <Flaky>{now}</Flaky>
         )}
         {x === 1 && y === 1 && !!(now % 5) && <Portaled />}
       </div>

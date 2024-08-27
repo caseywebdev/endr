@@ -90,7 +90,7 @@ const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: unknown) => void;
+ *   onError: (error: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;

@@ -48,7 +48,7 @@ export type Vnode = {
     key: Key;
     lastNode: Element | Text | null;
     node: Element | Text | null;
-    onError: (error: unknown) => void;
+    onError: (error: any) => void;
     parent: Vnode | null;
     parentNode: Element;
     prevNode: Element | Text | null;
@@ -147,7 +147,7 @@ export function Fragment(props: {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: unknown) => void;
+ *   onError: (error: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -242,7 +242,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: unknown) => void;
+ *   onError: (error: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -337,7 +337,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: unknown) => void;
+ *   onError: (error: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -432,7 +432,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: unknown) => void;
+ *   onError: (error: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
