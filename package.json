@@ -1,7 +1,7 @@
 {
   "name": "endr",
   "type": "module",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "repository": {

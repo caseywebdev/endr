@@ -1,9 +1,17 @@
 const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
   globalThis;
 
-/** @typedef {Def | string | number | false | null | undefined} Child */
+/**
+ * @template T
+ * @typedef {T | RecursiveArray<T>} Recursive
+ */
 
-/** @typedef {Child | Child[]} Children */
+/**
+ * @template T
+ * @typedef {Recursive<T>[]} RecursiveArray
+ */
+
+/** @typedef {Recursive<Def | string | number | false | null | undefined>} Children */
 
 /**
  * @typedef {((props: any) => Children) & {
