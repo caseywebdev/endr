@@ -767,7 +767,6 @@ const render = (children, node) => {
 
 // eslint-disable-next-line import/no-named-export
 export {
-  Try,
   createContext,
   Fragment,
   jsx,
@@ -777,6 +776,7 @@ export {
   memo,
   Portal,
   render,
+  Try,
   useCallback,
   useContext,
   useEffect,
