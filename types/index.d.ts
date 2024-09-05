@@ -1,6 +1,6 @@
 export type Recursive<T> = T | RecursiveArray<T>;
 export type RecursiveArray<T> = Recursive<T>[];
-export type Children = Recursive<Def | string | number | false | null | undefined>;
+export type Children = Recursive<Def | string | number | false | null | undefined | void>;
 export type FC = ((props: any) => Children) & {
     memo?: (a: Props, b: Props) => boolean;
 };
@@ -78,7 +78,11 @@ export function Fragment(props: {
  * @template T
  * @typedef {Recursive<T>[]} RecursiveArray
  */
-/** @typedef {Recursive<Def | string | number | false | null | undefined>} Children */
+/**
+ * @typedef {Recursive<
+ *   Def | string | number | false | null | undefined | void
+ * >} Children
+ */
 /**
  * @typedef {((props: any) => Children) & {
  *   memo?: (a: Props, b: Props) => boolean;
@@ -180,7 +184,11 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @template T
  * @typedef {Recursive<T>[]} RecursiveArray
  */
-/** @typedef {Recursive<Def | string | number | false | null | undefined>} Children */
+/**
+ * @typedef {Recursive<
+ *   Def | string | number | false | null | undefined | void
+ * >} Children
+ */
 /**
  * @typedef {((props: any) => Children) & {
  *   memo?: (a: Props, b: Props) => boolean;
@@ -282,7 +290,11 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @template T
  * @typedef {Recursive<T>[]} RecursiveArray
  */
-/** @typedef {Recursive<Def | string | number | false | null | undefined>} Children */
+/**
+ * @typedef {Recursive<
+ *   Def | string | number | false | null | undefined | void
+ * >} Children
+ */
 /**
  * @typedef {((props: any) => Children) & {
  *   memo?: (a: Props, b: Props) => boolean;
@@ -384,7 +396,11 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @template T
  * @typedef {Recursive<T>[]} RecursiveArray
  */
-/** @typedef {Recursive<Def | string | number | false | null | undefined>} Children */
+/**
+ * @typedef {Recursive<
+ *   Def | string | number | false | null | undefined | void
+ * >} Children
+ */
 /**
  * @typedef {((props: any) => Children) & {
  *   memo?: (a: Props, b: Props) => boolean;

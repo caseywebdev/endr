@@ -11,7 +11,11 @@ const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
  * @typedef {Recursive<T>[]} RecursiveArray
  */
 
-/** @typedef {Recursive<Def | string | number | false | null | undefined>} Children */
+/**
+ * @typedef {Recursive<
+ *   Def | string | number | false | null | undefined | void
+ * >} Children
+ */
 
 /**
  * @typedef {((props: any) => Children) & {
@@ -195,6 +199,9 @@ const textType = /** @type {Type} */ ({});
 const emptyDeps = /** @type {unknown[]} */ ([]);
 
 const svgNs = 'http://www.w3.org/2000/svg';
+
+/** @type {Vnode['catch']} */
+const defaultCatch = exception => console.error(exception);
 
 /**
  * @param {Type} type
@@ -545,7 +552,7 @@ const create = (type, props, key, parent, parentNode, index) => ({
   key,
   lastNode: null,
   node: createNode(type, props, parentNode),
-  catch: parent?.catch ?? (exception => console.error(exception)),
+  catch: parent?.catch ?? defaultCatch,
   parent,
   parentNode,
   prevNode: null,
