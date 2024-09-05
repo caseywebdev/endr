@@ -61,11 +61,6 @@ export type Vnode = {
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
 export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
-/** @param {{ children?: Children; catch: Vnode['catch'] }} props */
-export function Try(props: {
-    children?: Children;
-    catch: Vnode["catch"];
-}): Children;
 /** @template T */
 export function createContext<T>(): ({ value, children }: {
     value: T;
@@ -499,6 +494,11 @@ export function Portal(props: {
  * @param {Element} node
  */
 export function render(children: Children, node: Element): void;
+/** @param {{ children?: Children; catch: Vnode['catch'] }} props */
+export function Try(props: {
+    children?: Children;
+    catch: Vnode["catch"];
+}): Children;
 /**
  * @template {(...args: any[]) => any} T
  * @param {T} fn
