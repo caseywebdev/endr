@@ -63,18 +63,21 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
     ```js
     createPortal(<div />, parentElement)
     ```
-- Errors thrown during render can be caught by the nearest ErrorBoundary component.
+- Exceptions thrown during render can be caught by the nearest Try component.
   - ```js
     const MyComponent () => {
       const [error, setError] = useState(undefined);
+
+      if (error) return `An error occurred! ${error}`;
+
       return (
-        <ErrorBoundary onError={setError}>
-          {error ? 'It broke' : <AllMyChildren />}
-        </ErrorBoundary>
+        <Try catch={setError}>
+          <AllMyChildren />
+        </Try>
       );
     };
     ```
-    can be used, for example, to show an "It broke" message whenever rendering
-    `<AllMyChildren />` or any descendents throws an error.
-  - React's `Suspense` can be recreated with `ErrorBoundary` by awaiting all thrown
+    can be used, for example, to show an error message whenever rendering
+    `<AllMyChildren />` or any descendents throws an exception.
+  - React's `Suspense` can be recreated with `Try` by awaiting all thrown
     promises, if desired.

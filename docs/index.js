@@ -1,6 +1,6 @@
 import {
-  ErrorBoundary,
   Portal,
+  Try,
   createContext,
   memo,
   render,
@@ -46,8 +46,8 @@ const Tile = memo(({ x, y }) => {
   const [color, setColor] = useState('black');
 
   return (
-    <ErrorBoundary
-      onError={
+    <Try
+      catch={
         /** @param {Error} er */ er => {
           setColor(er.message);
           clearTimeout(timeoutRef.current);
@@ -82,7 +82,7 @@ const Tile = memo(({ x, y }) => {
         )}
         {x === 1 && y === 1 && !!(now % 5) && <Portaled />}
       </div>
-    </ErrorBoundary>
+    </Try>
   );
 });
 

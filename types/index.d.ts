@@ -49,7 +49,7 @@ export type Vnode = {
     key: Key;
     lastNode: Element | Text | null;
     node: Element | Text | null;
-    onError: (error: any) => void;
+    catch: (exception: any) => void;
     parent: Vnode | null;
     parentNode: Element;
     prevNode: Element | Text | null;
@@ -61,16 +61,16 @@ export type Vnode = {
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
 export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
+/** @param {{ children?: Children; catch: Vnode['catch'] }} props */
+export function Try(props: {
+    children?: Children;
+    catch: Vnode["catch"];
+}): Children;
 /** @template T */
 export function createContext<T>(): ({ value, children }: {
     value: T;
     children?: Children;
 }) => Children;
-/** @param {{ children?: Children; onError: Vnode['onError'] }} props */
-export function ErrorBoundary(props: {
-    children?: Children;
-    onError: Vnode["onError"];
-}): Children;
 /** @param {{ children?: Children }} props */
 export function Fragment(props: {
     children?: Children;
@@ -155,7 +155,7 @@ export function Fragment(props: {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: any) => void;
+ *   catch: (exception: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -257,7 +257,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: any) => void;
+ *   catch: (exception: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -359,7 +359,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: any) => void;
+ *   catch: (exception: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -461,7 +461,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: any) => void;
+ *   catch: (exception: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;

@@ -98,7 +98,7 @@ const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   onError: (error: any) => void;
+ *   catch: (exception: any) => void;
  *   parent: Vnode | null;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
@@ -134,9 +134,9 @@ const Fragment = props => props.children;
 /** @param {{ children?: Children; to: Element }} props */
 const Portal = props => props.children;
 
-/** @param {{ children?: Children; onError: Vnode['onError'] }} props */
-const ErrorBoundary = props => {
-  /** @type {Vnode} */ (currentVnode).onError = props.onError;
+/** @param {{ children?: Children; catch: Vnode['catch'] }} props */
+const Try = props => {
+  /** @type {Vnode} */ (currentVnode).catch = props.catch;
   return props.children;
 };
 
@@ -506,9 +506,9 @@ const getDefs = vnode => {
     refIndex = 0;
     try {
       children = vnode.type(vnode.props);
-    } catch (error) {
+    } catch (exception) {
       children = null;
-      vnode.onError(error);
+      vnode.catch(exception);
     }
   }
   return isEmpty(children)
@@ -545,7 +545,7 @@ const create = (type, props, key, parent, parentNode, index) => ({
   key,
   lastNode: null,
   node: createNode(type, props, parentNode),
-  onError: parent?.onError ?? (error => console.error(error)),
+  catch: parent?.catch ?? (exception => console.error(exception)),
   parent,
   parentNode,
   prevNode: null,
@@ -587,8 +587,8 @@ const update = vnode => {
           effect.before = undefined;
         }
       }
-    } catch (error) {
-      vnode.onError(error);
+    } catch (exception) {
+      vnode.catch(exception);
     }
   }
 
@@ -695,8 +695,8 @@ const remove = (vnode, removeNode) => {
           effect.before = undefined;
         }
       }
-    } catch (error) {
-      vnode.onError(error);
+    } catch (exception) {
+      vnode.catch(exception);
     }
   }
 
@@ -748,8 +748,8 @@ const flush = () => {
           effect.after = undefined;
         }
       }
-    } catch (error) {
-      vnode.onError(error);
+    } catch (exception) {
+      vnode.catch(exception);
     }
   }
 
@@ -767,8 +767,8 @@ const render = (children, node) => {
 
 // eslint-disable-next-line import/no-named-export
 export {
+  Try,
   createContext,
-  ErrorBoundary,
   Fragment,
   jsx,
   jsxDEV,
