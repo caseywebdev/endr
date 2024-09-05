@@ -192,7 +192,11 @@ const emptyProps = /** @type {const} */ ({});
 
 const emptyType = /** @type {Type} */ ({});
 
-const emptyDef = { type: emptyType, props: emptyProps, key: undefined };
+const emptyDef = /** @type {Def} */ ({
+  type: emptyType,
+  props: emptyProps,
+  key: undefined
+});
 
 const textType = /** @type {Type} */ ({});
 
@@ -526,14 +530,33 @@ const getDefs = vnode => {
 };
 
 /** @param {unknown} def */
-const normalizeDef = def =>
-  isEmpty(def)
-    ? emptyDef
-    : Array.isArray(def)
-      ? { type: Fragment, props: { children: def }, key: undefined }
-      : typeof def !== 'object'
-        ? { type: textType, props: { nodeValue: def }, key: undefined }
-        : /** @type {Def} */ (def);
+const normalizeDef = def => {
+  if (isEmpty(def)) return emptyDef;
+
+  if (Array.isArray(def)) {
+    return /** @type {Def} */ ({
+      type: Fragment,
+      props: { children: def },
+      key: undefined
+    });
+  }
+
+  if (
+    def &&
+    typeof def === 'object' &&
+    Object.keys(def).length === 3 &&
+    'type' in def &&
+    (typeof def.type === 'string' || typeof def.type === 'function') &&
+    'props' in def &&
+    def.props &&
+    typeof def.props === 'object' &&
+    'key' in def
+  ) {
+    return /** @type {Def} */ (def);
+  }
+
+  return { type: textType, props: { nodeValue: def }, key: undefined };
+};
 
 /**
  * @param {Type} type
@@ -650,16 +673,21 @@ const update = vnode => {
         needsMove = true;
       }
     } else {
-      child = create(
-        type,
-        props,
-        key,
-        vnode,
-        type === Portal
-          ? /** @type {Props<typeof Portal>} */ (props).to
-          : parentNode,
-        i
-      );
+      try {
+        child = create(
+          type,
+          props,
+          key,
+          vnode,
+          type === Portal
+            ? /** @type {Props<typeof Portal>} */ (props).to
+            : parentNode,
+          i
+        );
+      } catch (exception) {
+        vnode.catch(exception);
+        continue;
+      }
       if (child.node) needsInsert = true;
     }
 
