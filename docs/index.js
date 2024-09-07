@@ -72,11 +72,11 @@ const Tile = memo(({ x, y }) => {
         }}
       >
         {color === 'red' ? (
-          'Render Error'
+          'Fake Render Error'
         ) : color === 'blue' ? (
-          'After Effect Error'
+          'Fake After Effect Error'
         ) : color === 'yellow' ? (
-          'Before Effect Error'
+          'Fake Before Effect Error'
         ) : (
           <Flaky>{now}</Flaky>
         )}

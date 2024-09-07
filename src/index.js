@@ -38,22 +38,15 @@ const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
 
 /**
  * @template {HTMLElement} T
- * @typedef {SharedElementProps<T> & {
- *   [key in keyof T]?: key extends keyof SharedElementProps<T>
- *     ? SharedElementProps<T>[key]
- *     : T[key];
- * } & { [key: `data-${string}`]: any }} HTMLElementProps
+ * @typedef {SharedElementProps<T>
+ *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }} HTMLElementProps
  */
 
 /**
  * @template {SVGElement} T
- * @typedef {SharedElementProps<T> & {
- *   [key in keyof T]?: key extends keyof SharedElementProps<T>
- *     ? SharedElementProps<T>[key]
- *     : (() => any) extends T[key]
- *       ? T[key]
- *       : any;
- * } & { [key: string]: any }} SVGElementProps
+ * @typedef {SharedElementProps<T>
+ *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }
+ *   | { [key in string]?: string }} SVGElementProps
  */
 
 /** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
