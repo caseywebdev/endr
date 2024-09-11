@@ -45,7 +45,7 @@ const { console, document, queueMicrotask, Text } = globalThis;
  * @template {SVGElement} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
- *   | { [K: string]: string }} SVGElementProps
+ *   | { [K: string]: string | null | undefined }} SVGElementProps
  */
 
 /** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */

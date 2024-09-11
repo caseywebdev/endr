@@ -13,7 +13,7 @@ export type SharedElementProps<T = unknown> = {
 };
 export type HTMLElementProps<T extends HTMLElement, Shared = SharedElementProps<T>> = Shared & Partial<Omit<T, keyof Shared>>;
 export type SVGElementProps<T extends SVGElement, Shared = SharedElementProps<T>> = (Shared & Partial<Omit<T, keyof Shared>>) | {
-    [K: string]: string;
+    [K: string]: string | null | undefined;
 };
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
@@ -105,7 +105,7 @@ export function Fragment(props: {
  * @template {SVGElement} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
- *   | { [K: string]: string }} SVGElementProps
+ *   | { [K: string]: string | null | undefined }} SVGElementProps
  */
 /** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
@@ -204,7 +204,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @template {SVGElement} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
- *   | { [K: string]: string }} SVGElementProps
+ *   | { [K: string]: string | null | undefined }} SVGElementProps
  */
 /** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
@@ -303,7 +303,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @template {SVGElement} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
- *   | { [K: string]: string }} SVGElementProps
+ *   | { [K: string]: string | null | undefined }} SVGElementProps
  */
 /** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
@@ -402,7 +402,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @template {SVGElement} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
- *   | { [K: string]: string }} SVGElementProps
+ *   | { [K: string]: string | null | undefined }} SVGElementProps
  */
 /** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
