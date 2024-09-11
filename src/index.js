@@ -1,5 +1,4 @@
-const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
-  globalThis;
+const { console, document, queueMicrotask, Text } = globalThis;
 
 /**
  * @template T
@@ -32,24 +31,24 @@ const { console, CSSStyleDeclaration, document, queueMicrotask, Text } =
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<T | null>;
- *   style?: Partial<CSSStyleDeclaration>;
+ *   style?: Partial<CSSStyleDeclaration> | string;
  * }} SharedElementProps
  */
 
 /**
  * @template {HTMLElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }} HTMLElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {Shared & Partial<Omit<T, keyof Shared>>} HTMLElementProps
  */
 
 /**
  * @template {SVGElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }
- *   | { [key in string]?: string }} SVGElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
+ *   | { [K: string]: string }} SVGElementProps
  */
 
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
+/** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 
 /**
  * @template [T=unknown] Default is `unknown`
@@ -214,21 +213,20 @@ const createNode = (type, props, parentNode) => {
     );
   }
 
-  const node = document.createElementNS(
-    type === 'svg' ? svgNs : parentNode.namespaceURI,
-    type
+  const node = /** @type {HTMLElement | SVGElement} */ (
+    document.createElementNS(
+      type === 'svg' ? svgNs : parentNode.namespaceURI,
+      type
+    )
   );
-  updateNode(
-    node,
-    {},
-    /** @type {Partial<Element & SharedElementProps>} */ (props)
-  );
+  updateNode(node, {}, /** @type {Props<typeof node>} */ (props));
   return node;
 };
 
 /**
- * @param {Element} node
- * @param {keyof Element} key
+ * @template {Element} Node
+ * @param {Node} node
+ * @param {keyof Node} key
  */
 const isSimpleProperty = (node, key) =>
   key in node && (node[key] == null || typeof node[key] !== 'object');
@@ -244,10 +242,10 @@ const setStyle = (style, prev, next) => {
 };
 
 /**
- * @template {Element | Text} T
+ * @template {HTMLElement | SVGElement | Text} T
  * @param {T} node
- * @param {Partial<T & SharedElementProps>} prev
- * @param {Partial<T & SharedElementProps>} next
+ * @param {Props<T>} prev
+ * @param {Props<T>} next
  */
 const updateNode = (node, prev, next) => {
   if (node instanceof Text) {
@@ -255,41 +253,31 @@ const updateNode = (node, prev, next) => {
     return;
   }
 
-  for (const key in /** @type {T} */ (prev)) {
+  for (const key in prev) {
     if (key === 'children' || key in next) continue;
 
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
-    } else if (node[key] instanceof CSSStyleDeclaration) {
-      setStyle(
-        /** @type {CSSStyleDeclaration} */ (node[key]),
-        /** @type {CSSStyleDeclaration} */ (prev[key]),
-        {}
-      );
-    } else if (isSimpleProperty(node, /** @type {keyof Element} */ (key))) {
-      /** @type {{ [key: string]: unknown }} */ (/** @type {unknown} */ (node))[
-        key
-      ] = '';
-    } else node.removeAttribute(key);
+      // @ts-ignore
+    } else if (isSimpleProperty(node, key)) node[key] = '';
+    else node.removeAttribute(key);
   }
 
-  for (const key in /** @type {T} */ (next)) {
+  for (const key in next) {
     if (key === 'children' || prev[key] === next[key]) continue;
 
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
       if (next.ref) next.ref.current = node;
-    } else if (node[key] instanceof CSSStyleDeclaration) {
+    } else if (key === 'style' && next[key] && typeof next[key] === 'object') {
       setStyle(
-        /** @type {CSSStyleDeclaration} */ (node[key]),
-        /** @type {CSSStyleDeclaration} */ (prev[key]),
-        /** @type {CSSStyleDeclaration} */ (next[key])
+        node.style,
+        prev[key] && typeof prev[key] === 'object' ? prev[key] : {},
+        next[key]
       );
-    } else if (isSimpleProperty(node, /** @type {keyof Element} */ (key))) {
-      /** @type {{ [key: string]: unknown }} */ (/** @type {unknown} */ (node))[
-        key
-      ] = next[key] ?? '';
-    } else if (next[key] != null) {
+      // @ts-ignore
+    } else if (isSimpleProperty(node, key)) node[key] = next[key] ?? '';
+    else if (next[key] != null) {
       node.setAttribute(key, /** @type {string} */ (next[key]));
     } else node.removeAttribute(key);
   }

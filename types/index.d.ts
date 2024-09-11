@@ -9,12 +9,14 @@ export type Type = TagName | FC;
 export type SharedElementProps<T = unknown> = {
     children?: Children;
     ref?: Ref<T | null>;
-    style?: Partial<CSSStyleDeclaration>;
+    style?: Partial<CSSStyleDeclaration> | string;
 };
-export type HTMLElementProps<T extends HTMLElement> = SharedElementProps<T> | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key]; };
-export type SVGElementProps<T extends SVGElement> = SharedElementProps<T> | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key]; } | { [key in string]?: string; };
+export type HTMLElementProps<T extends HTMLElement, Shared = SharedElementProps<T>> = Shared & Partial<Omit<T, keyof Shared>>;
+export type SVGElementProps<T extends SVGElement, Shared = SharedElementProps<T>> = (Shared & Partial<Omit<T, keyof Shared>>) | {
+    [K: string]: string;
+};
 export type UnknownElementProps = SharedElementProps & {
-    [key: string]: unknown;
+    [K: string]: unknown;
 };
 export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? HTMLElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? SVGElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
 export type Key = any;
@@ -91,21 +93,21 @@ export function Fragment(props: {
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<T | null>;
- *   style?: Partial<CSSStyleDeclaration>;
+ *   style?: Partial<CSSStyleDeclaration> | string;
  * }} SharedElementProps
  */
 /**
  * @template {HTMLElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }} HTMLElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {Shared & Partial<Omit<T, keyof Shared>>} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }
- *   | { [key in string]?: string }} SVGElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
+ *   | { [K: string]: string }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
+/** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -190,21 +192,21 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<T | null>;
- *   style?: Partial<CSSStyleDeclaration>;
+ *   style?: Partial<CSSStyleDeclaration> | string;
  * }} SharedElementProps
  */
 /**
  * @template {HTMLElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }} HTMLElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {Shared & Partial<Omit<T, keyof Shared>>} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }
- *   | { [key in string]?: string }} SVGElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
+ *   | { [K: string]: string }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
+/** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -289,21 +291,21 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<T | null>;
- *   style?: Partial<CSSStyleDeclaration>;
+ *   style?: Partial<CSSStyleDeclaration> | string;
  * }} SharedElementProps
  */
 /**
  * @template {HTMLElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }} HTMLElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {Shared & Partial<Omit<T, keyof Shared>>} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }
- *   | { [key in string]?: string }} SVGElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
+ *   | { [K: string]: string }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
+/** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
@@ -388,21 +390,21 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @typedef {{
  *   children?: Children;
  *   ref?: Ref<T | null>;
- *   style?: Partial<CSSStyleDeclaration>;
+ *   style?: Partial<CSSStyleDeclaration> | string;
  * }} SharedElementProps
  */
 /**
  * @template {HTMLElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }} HTMLElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {Shared & Partial<Omit<T, keyof Shared>>} HTMLElementProps
  */
 /**
  * @template {SVGElement} T
- * @typedef {SharedElementProps<T>
- *   | { [key in Exclude<keyof T, keyof SharedElementProps<T>>]?: T[key] }
- *   | { [key in string]?: string }} SVGElementProps
+ * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @typedef {(Shared & Partial<Omit<T, keyof Shared>>)
+ *   | { [K: string]: string }} SVGElementProps
  */
-/** @typedef {SharedElementProps & { [key: string]: unknown }} UnknownElementProps */
+/** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
 /**
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
