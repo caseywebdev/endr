@@ -168,11 +168,6 @@ const createContext = () => {
     if (value !== context.value) {
       context.value = value;
       for (const dep of context.deps) {
-        if (dep.queues !== vnode.queues) {
-          queueUpdate(dep);
-          continue;
-        }
-
         dep.state = 1;
         let { parent } = dep;
         while (parent && parent !== vnode && !parent.state) {
