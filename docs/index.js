@@ -1,10 +1,10 @@
 import {
-  Portal,
   Try,
   createContext,
+  createRoot,
   memo,
-  render,
   useContext,
+  useContextProxy,
   useEffect,
   useMemo,
   useRef,
@@ -29,6 +29,22 @@ const Flaky = ({ children }) => {
   });
 
   return children;
+};
+
+const PortalNow = () => (
+  <div
+    style={{ background: '#fff9', borderRadius: '0.25rem', padding: '1rem' }}
+  >
+    Portal: {useContext(Context)}
+  </div>
+);
+
+/** @param {{ children: Children; to: Element }} props */
+const Portal = ({ children, to }) => {
+  const ContextProxy = useContextProxy();
+  const root = useMemo(() => createRoot(to), [to]);
+  useEffect(() => root.unmount, [root]);
+  root.render(<ContextProxy>{children}</ContextProxy>);
 };
 
 /** @param {{ x: number; y: number }} props */
@@ -80,31 +96,17 @@ const Tile = memo(({ x, y }) => {
         ) : (
           <Flaky>{now}</Flaky>
         )}
-        {x === 1 && y === 1 && !!(now % 5) && <Portaled />}
+        {x === 0 && y === 0 && !!(now % 5) && (
+          <Portal
+            to={/** @type {Element} */ (document.getElementById('portal'))}
+          >
+            <PortalNow />
+          </Portal>
+        )}
       </div>
     </Try>
   );
 });
-
-const Portaled = () => {
-  const now = useContext(Context);
-
-  return (
-    <Portal
-      to={/** @type {HTMLDivElement} */ (document.getElementById('portal'))}
-    >
-      <div
-        style={{
-          background: '#fff9',
-          borderRadius: '0.25rem',
-          padding: '1rem'
-        }}
-      >
-        Portal: {now}
-      </div>
-    </Portal>
-  );
-};
 
 const Context = /** @type {typeof createContext<number>} */ (createContext)();
 
@@ -113,7 +115,7 @@ const Root = () => {
 
   useEffect(() => {
     setInterval(() => setNow(new Date().getSeconds()), 1000);
-  });
+  }, []);
 
   return (
     <Context value={now}>
@@ -129,11 +131,17 @@ const Root = () => {
           <Tile key={i} x={i % resolution} y={Math.floor(i / resolution)} />
         ))}
       </div>
+      <button
+        onclick={root.unmount}
+        style={{ position: 'fixed', bottom: '1rem', right: '1rem' }}
+      >
+        Unmount
+      </button>
     </Context>
   );
 };
 
-render(
-  <Root />,
-  /** @type {HTMLDivElement} */ (document.getElementById('root'))
+const root = createRoot(
+  /** @type {Element} */ (document.getElementById('root'))
 );
+root.render(<Root />);

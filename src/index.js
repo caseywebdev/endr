@@ -86,6 +86,24 @@ const { console, document, queueMicrotask, Text } = globalThis;
 
 /**
  * @typedef {{
+ *   render: (children: Children) => void;
+ *   unmount: () => void;
+ * }} Root
+ */
+
+/**
+ * @typedef {{
+ *   afterEffects: Vnode[];
+ *   inserts: Vnode[];
+ *   moves: Vnode[];
+ *   nodeUpdates: Parameters<typeof updateNode>[];
+ *   removes: (Element | Text)[];
+ *   updates: Vnode[];
+ * }} Queues
+ */
+
+/**
+ * @typedef {{
  *   child: Vnode | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
@@ -99,6 +117,7 @@ const { console, document, queueMicrotask, Text } = globalThis;
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
  *   props: Props;
+ *   queues: Queues;
  *   refs: Ref<unknown>[] | null;
  *   sibling: Vnode | null;
  *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
@@ -127,9 +146,6 @@ const jsxsDEV = jsx;
 /** @param {{ children?: Children }} props */
 const Fragment = props => props.children;
 
-/** @param {{ children?: Children; to: Element }} props */
-const Portal = props => props.children;
-
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
 const Try = props => {
   /** @type {Vnode} */ (currentVnode).catch = props.catch;
@@ -152,6 +168,11 @@ const createContext = () => {
     if (value !== context.value) {
       context.value = value;
       for (const dep of context.deps) {
+        if (dep.queues !== vnode.queues) {
+          queueUpdate(dep);
+          continue;
+        }
+
         dep.state = 1;
         let { parent } = dep;
         while (parent && parent !== vnode && !parent.state) {
@@ -289,24 +310,6 @@ let currentVnode = null;
 let effectIndex = 0;
 
 let refIndex = 0;
-
-/** @type {(Element | Text)[]} */
-let removeQueue = [];
-
-/** @type {Vnode[]} */
-let moveQueue = [];
-
-/** @type {Parameters<typeof updateNode>[]} */
-let nodeUpdateQueue = [];
-
-/** @type {Vnode[]} */
-let insertQueue = [];
-
-/** @type {Vnode[]} */
-let afterEffectQueue = [];
-
-/** @type {Vnode[]} */
-let updateQueue = [];
 
 /**
  * @template T
@@ -447,6 +450,19 @@ const useContext = Context => {
   return /** @type {ContextValue<T> | undefined} */ (context?.value);
 };
 
+const useContextProxy = () => {
+  const { contexts } = /** @type {Vnode} */ (currentVnode);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() =>
+    /** @param {{ children: Children }} props */
+    ({ children }) => {
+      /** @type {Vnode} */ (currentVnode).contexts = contexts;
+      return children;
+    }
+  );
+};
+
 /**
  * @param {Vnode} a
  * @param {Vnode} b
@@ -474,18 +490,21 @@ const batchComparator = (a, b) => {
 const queueUpdate = vnode => {
   if (vnode.state === 1 || vnode.state === 3) return;
 
-  if (updateQueue.length === 0) {
+  const { queues } = vnode;
+  const { updates } = queues;
+
+  if (updates.length === 0) {
     queueMicrotask(() => {
-      const batch = updateQueue.sort(batchComparator);
-      updateQueue = [];
+      const batch = updates.sort(batchComparator);
+      queues.updates = [];
       for (let i = 0; i < batch.length; ++i) {
         const vnode = batch[i];
         if (vnode.state === 1) update(vnode);
       }
-      flush();
+      flush(queues);
     });
   }
-  updateQueue.push(vnode);
+  updates.push(vnode);
   vnode.state = 1;
 };
 
@@ -493,6 +512,7 @@ const queueUpdate = vnode => {
 const getDefs = vnode => {
   let { children } = vnode.props;
   if (typeof vnode.type === 'function') {
+    const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
     currentVnode = vnode;
     effectIndex = 0;
     refIndex = 0;
@@ -502,6 +522,7 @@ const getDefs = vnode => {
       children = null;
       vnode.catch(exception);
     }
+    [currentVnode, effectIndex, refIndex] = prev;
   }
   return isEmpty(children)
     ? []
@@ -539,34 +560,6 @@ const normalizeDef = def => {
   return { type: textType, props: { nodeValue: def }, key: undefined };
 };
 
-/**
- * @param {Type} type
- * @param {Props} props
- * @param {Key} key
- * @param {Vnode | null} parent
- * @param {Element} parentNode
- * @param {number} index
- */
-const create = (type, props, key, parent, parentNode, index) => ({
-  child: null,
-  contexts: parent?.contexts ?? null,
-  depth: parent ? parent.depth + 1 : 0,
-  effects: null,
-  index,
-  key,
-  lastNode: null,
-  node: createNode(type, props, parentNode),
-  catch: parent?.catch ?? defaultCatch,
-  parent,
-  parentNode,
-  prevNode: null,
-  props,
-  refs: null,
-  sibling: null,
-  state: /** @type {const} */ (1),
-  type
-});
-
 /** @param {Vnode} vnode */
 const updateChild = vnode => {
   let { child, state } = vnode;
@@ -589,6 +582,9 @@ const getNodes = ({ child, node }) => {
 
 /** @param {Vnode} vnode */
 const update = vnode => {
+  const { depth, queues } = vnode;
+  const { afterEffects, inserts, moves, nodeUpdates } = queues;
+
   if (vnode.effects) {
     try {
       for (let i = 0; i < vnode.effects.length; ++i) {
@@ -655,16 +651,26 @@ const update = vnode => {
       }
     } else {
       try {
-        child = create(
-          type,
-          props,
+        child = {
+          catch: vnode.catch,
+          child: null,
+          contexts: vnode.contexts,
+          depth: depth + 1,
+          effects: null,
+          index: i,
           key,
-          vnode,
-          type === Portal
-            ? /** @type {Props<typeof Portal>} */ (props).to
-            : parentNode,
-          i
-        );
+          lastNode: null,
+          node: createNode(type, props, parentNode),
+          parent: vnode,
+          parentNode,
+          prevNode: null,
+          props,
+          queues,
+          refs: null,
+          sibling: null,
+          state: /** @type {const} */ (1),
+          type
+        };
       } catch (exception) {
         vnode.catch(exception);
         continue;
@@ -676,9 +682,9 @@ const update = vnode => {
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
     updateChild(child);
-    if (needsMove) moveQueue.push(child);
-    if (nodeUpdate) nodeUpdateQueue.push(nodeUpdate);
-    if (needsInsert) insertQueue.push(child);
+    if (needsMove) moves.push(child);
+    if (nodeUpdate) nodeUpdates.push(nodeUpdate);
+    if (needsInsert) inserts.push(child);
     if (child.parentNode === parentNode && child.lastNode) {
       prevNode = child.lastNode;
     }
@@ -687,17 +693,17 @@ const update = vnode => {
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
   if (prevChildren) {
-    for (const child of prevChildren.values()) remove(child, true);
+    for (const child of prevChildren.values()) remove(child);
   }
 
-  if (vnode.effects) afterEffectQueue.push(vnode);
+  if (vnode.effects) afterEffects.push(vnode);
 };
 
 /**
  * @param {Vnode} vnode
  * @param {boolean} removeNode
  */
-const remove = (vnode, removeNode) => {
+const remove = (vnode, removeNode = true) => {
   vnode.state = 3;
 
   let { effects, child, node } = vnode;
@@ -720,39 +726,40 @@ const remove = (vnode, removeNode) => {
 
   for (; child; child = child.sibling) remove(child, removeChildNode);
 
-  if (removeNode && node) removeQueue.unshift(node);
+  if (removeNode && node) vnode.queues.removes.unshift(node);
 };
 
-const flush = () => {
-  for (let i = removeQueue.length - 1; i >= 0; --i) removeQueue[i].remove();
+/** @param {Queues} queues */
+const flush = queues => {
+  const { afterEffects, inserts, moves, nodeUpdates, removes } = queues;
 
-  removeQueue = [];
+  for (let i = removes.length - 1; i >= 0; --i) removes[i].remove();
 
-  for (let i = 0; i < moveQueue.length; ++i) {
-    const vnode = moveQueue[i];
+  queues.removes = [];
+
+  for (let i = 0; i < moves.length; ++i) {
+    const vnode = moves[i];
     if (vnode.prevNode) vnode.prevNode.after(...getNodes(vnode));
     else vnode.parentNode.prepend(...getNodes(vnode));
   }
 
-  moveQueue = [];
+  queues.moves = [];
 
-  for (let i = 0; i < nodeUpdateQueue.length; ++i) {
-    updateNode(...nodeUpdateQueue[i]);
-  }
+  for (let i = 0; i < nodeUpdates.length; ++i) updateNode(...nodeUpdates[i]);
 
-  nodeUpdateQueue = [];
+  queues.nodeUpdates = [];
 
-  for (let i = 0; i < insertQueue.length; ++i) {
-    const vnode = insertQueue[i];
+  for (let i = 0; i < inserts.length; ++i) {
+    const vnode = inserts[i];
     if (vnode.prevNode) {
       vnode.prevNode.after(/** @type {Element | Text} */ (vnode.node));
     } else vnode.parentNode.prepend(/** @type {Element | Text} */ (vnode.node));
   }
 
-  insertQueue = [];
+  queues.inserts = [];
 
-  for (let i = 0; i < afterEffectQueue.length; ++i) {
-    const vnode = afterEffectQueue[i];
+  for (let i = 0; i < afterEffects.length; ++i) {
+    const vnode = afterEffects[i];
     const effects = /** @type {NonNullable<Vnode['effects']>} */ (
       vnode.effects
     );
@@ -769,32 +776,74 @@ const flush = () => {
     }
   }
 
-  afterEffectQueue = [];
+  queues.afterEffects = [];
 };
 
-/**
- * @param {Children} children
- * @param {Element} node
- */
-const render = (children, node) => {
-  update(create(Fragment, { children }, undefined, null, node, 0));
-  flush();
+/** @param {Element} node */
+const createRoot = node => {
+  /** @type {Queues} */
+  const queues = {
+    afterEffects: [],
+    inserts: [],
+    moves: [],
+    nodeUpdates: [],
+    removes: [],
+    updates: []
+  };
+
+  /** @type {Vnode} */
+  const vnode = {
+    catch: defaultCatch,
+    child: null,
+    contexts: null,
+    depth: 0,
+    effects: null,
+    index: 0,
+    key: undefined,
+    lastNode: null,
+    node: null,
+    parent: null,
+    parentNode: node,
+    prevNode: /** @type {Element} */ (node.lastChild),
+    props: {},
+    queues,
+    refs: null,
+    sibling: null,
+    state: /** @type {const} */ (1),
+    type: Fragment
+  };
+
+  update(vnode);
+  flush(queues);
+
+  return /** @type {Root} */ ({
+    render: children => {
+      vnode.props = { children };
+      update(vnode);
+      flush(queues);
+    },
+
+    unmount: () => {
+      remove(vnode);
+      flush(queues);
+    }
+  });
 };
 
 // eslint-disable-next-line import/no-named-export
 export {
   createContext,
+  createRoot,
   Fragment,
   jsx,
   jsxDEV,
   jsxs,
   jsxsDEV,
   memo,
-  Portal,
-  render,
   Try,
   useCallback,
   useContext,
+  useContextProxy,
   useEffect,
   useMemo,
   useRef,

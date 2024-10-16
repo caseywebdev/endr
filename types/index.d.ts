@@ -35,6 +35,18 @@ export type Effect = {
     after: AfterEffect | undefined;
     deps: unknown[] | undefined;
 };
+export type Root = {
+    render: (children: Children) => void;
+    unmount: () => void;
+};
+export type Queues = {
+    afterEffects: Vnode[];
+    inserts: Vnode[];
+    moves: Vnode[];
+    nodeUpdates: Parameters<typeof updateNode>[];
+    removes: (Element | Text)[];
+    updates: Vnode[];
+};
 export type Vnode = {
     child: Vnode | null;
     contexts: Map<Context<any>, {
@@ -52,6 +64,7 @@ export type Vnode = {
     parentNode: Element;
     prevNode: Element | Text | null;
     props: Props;
+    queues: Queues;
     refs: Ref<unknown>[] | null;
     sibling: Vnode | null;
     state: 0 | 1 | 2 | 3;
@@ -64,6 +77,8 @@ export function createContext<T>(): ({ value, children }: {
     value: T;
     children?: Children;
 }) => Children;
+/** @param {Element} node */
+export function createRoot(node: Element): Root;
 /** @param {{ children?: Children }} props */
 export function Fragment(props: {
     children?: Children;
@@ -137,6 +152,22 @@ export function Fragment(props: {
  */
 /**
  * @typedef {{
+ *   render: (children: Children) => void;
+ *   unmount: () => void;
+ * }} Root
+ */
+/**
+ * @typedef {{
+ *   afterEffects: Vnode[];
+ *   inserts: Vnode[];
+ *   moves: Vnode[];
+ *   nodeUpdates: Parameters<typeof updateNode>[];
+ *   removes: (Element | Text)[];
+ *   updates: Vnode[];
+ * }} Queues
+ */
+/**
+ * @typedef {{
  *   child: Vnode | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
@@ -150,6 +181,7 @@ export function Fragment(props: {
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
  *   props: Props;
+ *   queues: Queues;
  *   refs: Ref<unknown>[] | null;
  *   sibling: Vnode | null;
  *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
@@ -236,6 +268,22 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
+ *   render: (children: Children) => void;
+ *   unmount: () => void;
+ * }} Root
+ */
+/**
+ * @typedef {{
+ *   afterEffects: Vnode[];
+ *   inserts: Vnode[];
+ *   moves: Vnode[];
+ *   nodeUpdates: Parameters<typeof updateNode>[];
+ *   removes: (Element | Text)[];
+ *   updates: Vnode[];
+ * }} Queues
+ */
+/**
+ * @typedef {{
  *   child: Vnode | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
@@ -249,6 +297,7 @@ export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
  *   props: Props;
+ *   queues: Queues;
  *   refs: Ref<unknown>[] | null;
  *   sibling: Vnode | null;
  *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
@@ -335,6 +384,22 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
+ *   render: (children: Children) => void;
+ *   unmount: () => void;
+ * }} Root
+ */
+/**
+ * @typedef {{
+ *   afterEffects: Vnode[];
+ *   inserts: Vnode[];
+ *   moves: Vnode[];
+ *   nodeUpdates: Parameters<typeof updateNode>[];
+ *   removes: (Element | Text)[];
+ *   updates: Vnode[];
+ * }} Queues
+ */
+/**
+ * @typedef {{
  *   child: Vnode | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
@@ -348,6 +413,7 @@ export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
  *   props: Props;
+ *   queues: Queues;
  *   refs: Ref<unknown>[] | null;
  *   sibling: Vnode | null;
  *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
@@ -434,6 +500,22 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  */
 /**
  * @typedef {{
+ *   render: (children: Children) => void;
+ *   unmount: () => void;
+ * }} Root
+ */
+/**
+ * @typedef {{
+ *   afterEffects: Vnode[];
+ *   inserts: Vnode[];
+ *   moves: Vnode[];
+ *   nodeUpdates: Parameters<typeof updateNode>[];
+ *   removes: (Element | Text)[];
+ *   updates: Vnode[];
+ * }} Queues
+ */
+/**
+ * @typedef {{
  *   child: Vnode | null;
  *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
  *   depth: number;
@@ -447,6 +529,7 @@ export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  *   parentNode: Element;
  *   prevNode: Element | Text | null;
  *   props: Props;
+ *   queues: Queues;
  *   refs: Ref<unknown>[] | null;
  *   sibling: Vnode | null;
  *   state: 0 | 1 | 2 | 3; // 0 = idle, 1 = needs update, 2 = child needs update, 3 = removed
@@ -470,16 +553,6 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @param {typeof defaultMemo} [memo]
  */
 export function memo<Component extends FC>(Component: Component, memo?: ((prev: Props, next: Props) => boolean) | undefined): Component;
-/** @param {{ children?: Children; to: Element }} props */
-export function Portal(props: {
-    children?: Children;
-    to: Element;
-}): Children;
-/**
- * @param {Children} children
- * @param {Element} node
- */
-export function render(children: Children, node: Element): void;
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
 export function Try(props: {
     children?: Children;
@@ -495,6 +568,9 @@ export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
  * @param {T} Context
  */
 export function useContext<T extends Context<any>>(Context: T): ContextValue<T> | undefined;
+export function useContextProxy(): ({ children }: {
+    children: Children;
+}) => Children;
 /**
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]
@@ -516,3 +592,11 @@ export function useRef<T>(initial: T): Ref<T>;
  * @param {T} initial
  */
 export function useState<T>(initial: T): [T, (next: T | ((current: T) => T)) => T];
+/**
+ * @template {HTMLElement | SVGElement | Text} T
+ * @param {T} node
+ * @param {Props<T>} prev
+ * @param {Props<T>} next
+ */
+declare function updateNode<T extends HTMLElement | SVGElement | Text>(node: T, prev: Props<T>, next: Props<T>): void;
+export {};
