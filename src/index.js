@@ -1,5 +1,3 @@
-const { console, document, queueMicrotask, Text } = globalThis;
-
 /**
  * @template T
  * @typedef {T | RecursiveArray<T>} Recursive
@@ -126,6 +124,18 @@ const { console, document, queueMicrotask, Text } = globalThis;
  */
 
 /**
+ * @template T
+ * @typedef {ReturnType<typeof createContext<T>>} Context
+ */
+
+/**
+ * @template {Context<unknown>} T
+ * @typedef {Parameters<T>[0]['value']} ContextValue
+ */
+
+const { console, document, queueMicrotask, Text } = globalThis;
+
+/**
  * @template {Type} T
  * @param {T} type
  * @param {Props<T>} props
@@ -186,16 +196,6 @@ const createContext = () => {
   return Context;
 };
 
-/**
- * @template T
- * @typedef {ReturnType<typeof createContext<T>>} Context
- */
-
-/**
- * @template {Context<unknown>} T
- * @typedef {Parameters<T>[0]['value']} ContextValue
- */
-
 /** @param {unknown} value */
 const isEmpty = value => value == null || value === false || value === '';
 
@@ -203,11 +203,7 @@ const emptyProps = /** @type {const} */ ({});
 
 const emptyType = /** @type {Type} */ ({});
 
-const emptyDef = /** @type {Def} */ ({
-  type: emptyType,
-  props: emptyProps,
-  key: undefined
-});
+const emptyDef = jsx(emptyType, emptyProps);
 
 const textType = /** @type {Type} */ ({});
 
@@ -520,13 +516,7 @@ const getDefs = vnode => {
 const normalizeDef = def => {
   if (isEmpty(def)) return emptyDef;
 
-  if (Array.isArray(def)) {
-    return /** @type {Def} */ ({
-      type: Fragment,
-      props: { children: def },
-      key: undefined
-    });
-  }
+  if (Array.isArray(def)) return jsx(Fragment, { children: def });
 
   if (
     def &&
@@ -542,7 +532,7 @@ const normalizeDef = def => {
     return /** @type {Def} */ (def);
   }
 
-  return { type: textType, props: { nodeValue: def }, key: undefined };
+  return jsx(textType, { nodeValue: def });
 };
 
 /** @param {Vnode} vnode */
@@ -647,17 +637,20 @@ const update = vnode => {
           lastNode: null,
           node: createNode(type, props, parentNode),
           parent: vnode,
-          parentNode:
-            type === Portal
-              ? /** @type {Props<typeof Portal>} */ (props).to
-              : parentNode,
-          prevNode: null,
           props,
           queues,
           refs: null,
           sibling: null,
           state: /** @type {const} */ (1),
-          type
+          type,
+          ...(type === Portal
+            ? {
+                parentNode: /** @type {Props<typeof Portal>} */ (props).to,
+                prevNode: /** @type {Element} */ (
+                  /** @type {Props<typeof Portal>} */ (props).to.lastChild
+                )
+              }
+            : { parentNode, prevNode })
         };
       } catch (exception) {
         vnode.catch(exception);
@@ -729,8 +722,9 @@ const flush = queues => {
 
   for (let i = 0; i < moves.length; ++i) {
     const vnode = moves[i];
-    if (vnode.prevNode) vnode.prevNode.after(...getNodes(vnode));
-    else vnode.parentNode.prepend(...getNodes(vnode));
+    const { parentNode, prevNode } = vnode;
+    if (prevNode) prevNode.after(...getNodes(vnode));
+    else parentNode.prepend(...getNodes(vnode));
   }
 
   queues.moves = [];
@@ -740,10 +734,9 @@ const flush = queues => {
   queues.nodeUpdates = [];
 
   for (let i = 0; i < inserts.length; ++i) {
-    const vnode = inserts[i];
-    if (vnode.prevNode) {
-      vnode.prevNode.after(/** @type {Element | Text} */ (vnode.node));
-    } else vnode.parentNode.prepend(/** @type {Element | Text} */ (vnode.node));
+    const { node, parentNode, prevNode } = inserts[i];
+    if (prevNode) prevNode.after(/** @type {Element} */ (node));
+    else parentNode.prepend(/** @type {Element} */ (node));
   }
 
   queues.inserts = [];
@@ -757,7 +750,7 @@ const flush = queues => {
       for (let j = 0; j < effects.length; ++j) {
         const effect = effects[j];
         if (effect.after) {
-          effect.before = /** @type {AfterEffect} */ (effect.after)();
+          effect.before = effect.after();
           effect.after = undefined;
         }
       }
@@ -769,8 +762,8 @@ const flush = queues => {
   queues.afterEffects = [];
 };
 
-/** @param {Element} node */
-const createRoot = node => {
+/** @param {Element} parentNode */
+const createRoot = parentNode => {
   /** @type {Queues} */
   const queues = {
     afterEffects: [],
@@ -793,8 +786,8 @@ const createRoot = node => {
     lastNode: null,
     node: null,
     parent: null,
-    parentNode: node,
-    prevNode: /** @type {Element} */ (node.lastChild),
+    parentNode,
+    prevNode: /** @type {Element} */ (parentNode.lastChild),
     props: {},
     queues,
     refs: null,
