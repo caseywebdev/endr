@@ -553,6 +553,11 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @param {typeof defaultMemo} [memo]
  */
 export function memo<Component extends FC>(Component: Component, memo?: ((prev: Props, next: Props) => boolean) | undefined): Component;
+/** @param {{ children?: Children; to: Element }} props */
+export function Portal(props: {
+    children?: Children;
+    to: Element;
+}): Children;
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
 export function Try(props: {
     children?: Children;
@@ -568,8 +573,6 @@ export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
  * @param {T} Context
  */
 export function useContext<T extends Context<any>>(Context: T): ContextValue<T> | undefined;
-/** @param {Children} children */
-export function useContextProxy(children: Children): Children;
 /**
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]

@@ -42,9 +42,6 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
   component.
   - There is no `Context.Consumer` component. Access context values through
     `useContext(Context)`.
-- `useContextProxy` can be used to create a `ContextProxy` component that will
-  pass through the context of the caller to any child components of
-  `ContextProxy`.
 - `useCallback` does not take any arguments and will return a constant function
   that will call the last seen function passed to `useCallback`. This is by far
   the most useful case for memoizing functions. The much less common case of
@@ -58,35 +55,29 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
 - The `jsx: 'automatic'` setting for JSX transpilers is required if using JSX.
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
+- Portals can be used with the `Portal` component instead of `createPortal`.
+  ```js
+  <Portal to={parentElement}><div /></Portal>
+  ```
+  is equivalent to React's
+  ```js
+  createPortal(<div />, parentElement)
+  ```
 - Exceptions thrown during render can be caught by the nearest Try component.
-  - ```js
-    const MyComponent () => {
-      const [error, setError] = useState(undefined);
+  ```js
+  const MyComponent () => {
+    const [error, setError] = useState(undefined);
 
-      if (error) return `An error occurred! ${error}`;
+    if (error) return `An error occurred! ${error}`;
 
-      return (
-        <Try catch={setError}>
-          <AllMyChildren />
-        </Try>
-      );
-    };
-    ```
-    can be used, for example, to show an error message whenever rendering
+    return (
+      <Try catch={setError}>
+        <AllMyChildren />
+      </Try>
+    );
+  };
+  ```
+  can be used, for example, to show an error message whenever rendering
     `<AllMyChildren />` or any descendents throws an exception.
   - React's `Suspense` can be recreated with `Try` by awaiting all thrown
     promises, if desired.
-- There is no `Portal` component. A portal in react is very similar to simply
-creating a new root somewhere in the DOM. To avoid creating duplicate APIs for
-achieving the same result, endr does not implement the portal component
-directly. Here's a sample implementation of `Portal`
-  ```js
-  import { createRoot, useContextProxy, useEffect, useMemo } from 'endr';
-
-  /** @param {{ children: Children; to: Element }} props */
-  const Portal = ({ children, to }) => {
-    const root = useMemo(() => createRoot(to), [to]);
-    useEffect(() => root.unmount, [root]);
-    root.render(useContextProxy(children));
-  };
-  ```

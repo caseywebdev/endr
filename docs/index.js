@@ -1,10 +1,10 @@
 import {
+  Portal,
   Try,
   createContext,
   createRoot,
   memo,
   useContext,
-  useContextProxy,
   useEffect,
   useMemo,
   useRef,
@@ -19,32 +19,25 @@ const resolution = 10;
 
 /** @param {{ children: Children }} props */
 const Flaky = ({ children }) => {
-  if (Math.random() < 0.01) throw new Error('red');
+  if (Math.random() < 0.005) throw new Error('red');
 
   useEffect(() => {
-    if (Math.random() < 0.01) throw new Error('blue');
+    if (Math.random() < 0.005) throw new Error('blue');
     return () => {
-      if (Math.random() < 0.01) throw new Error('yellow');
+      if (Math.random() < 0.5) throw new Error('yellow');
     };
   });
 
   return children;
 };
 
-const PortalNow = memo(() => (
+const Portaled = memo(() => (
   <div
     style={{ background: '#fff9', borderRadius: '0.25rem', padding: '1rem' }}
   >
     Portal: {useContext(Context)}
   </div>
 ));
-
-/** @param {{ children: Children; to: Element }} props */
-const Portal = ({ children, to }) => {
-  const root = useMemo(() => createRoot(to), [to]);
-  useEffect(() => root.unmount, [root]);
-  root.render(useContextProxy(children));
-};
 
 /** @param {{ x: number; y: number }} props */
 const Tile = memo(({ x, y }) => {
@@ -78,12 +71,17 @@ const Tile = memo(({ x, y }) => {
         }}
         ontouchmove={ev => ev.preventDefault()}
         style={{
-          backgroundColor: color,
-          transition: color === 'black' ? 'all 5s' : '',
-          display: 'flex',
-          justifyContent: 'center',
           alignItems: 'center',
-          overflow: 'hidden'
+          backgroundColor: color,
+          borderRadius: '0.25rem',
+          display: 'flex',
+          fontSize: '0.75rem',
+          justifyContent: 'center',
+          minWidth: '0',
+          overflow: 'hidden',
+          padding: '0.25rem',
+          textAlign: 'center',
+          transition: color === 'black' ? 'all 5s' : ''
         }}
       >
         {color === 'red' ? (
@@ -99,7 +97,7 @@ const Tile = memo(({ x, y }) => {
           <Portal
             to={/** @type {Element} */ (document.getElementById('portal'))}
           >
-            <PortalNow />
+            <Portaled />
           </Portal>
         )}
       </div>
@@ -122,8 +120,10 @@ const Root = () => {
         style={{
           cursor: 'crosshair',
           display: 'grid',
+          gap: '0.25rem',
           gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
-          height: '100%'
+          height: '100%',
+          padding: '0.25rem'
         }}
       >
         {Array.from({ length: resolution * resolution }, (_, i) => (

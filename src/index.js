@@ -146,6 +146,9 @@ const jsxsDEV = jsx;
 /** @param {{ children?: Children }} props */
 const Fragment = props => props.children;
 
+/** @param {{ children?: Children; to: Element }} props */
+const Portal = props => props.children;
+
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
 const Try = props => {
   /** @type {Vnode} */ (currentVnode).catch = props.catch;
@@ -445,22 +448,6 @@ const useContext = Context => {
   return /** @type {ContextValue<T> | undefined} */ (context?.value);
 };
 
-/** @param {Children} children */
-const useContextProxy = children => {
-  const { contexts } = /** @type {Vnode} */ (currentVnode);
-
-  for (const Context of contexts?.keys() ?? []) {
-    children = {
-      type: Context,
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      props: { children, value: useContext(Context) },
-      key: undefined
-    };
-  }
-
-  return children;
-};
-
 /**
  * @param {Vnode} a
  * @param {Vnode} b
@@ -660,7 +647,10 @@ const update = vnode => {
           lastNode: null,
           node: createNode(type, props, parentNode),
           parent: vnode,
-          parentNode,
+          parentNode:
+            type === Portal
+              ? /** @type {Props<typeof Portal>} */ (props).to
+              : parentNode,
           prevNode: null,
           props,
           queues,
@@ -722,7 +712,9 @@ const remove = (vnode, removeNode = true) => {
 
   const removeChildNode = removeNode && !node;
 
-  for (; child; child = child.sibling) remove(child, removeChildNode);
+  for (; child; child = child.sibling) {
+    remove(child, removeChildNode || child.type === Portal);
+  }
 
   if (removeNode && node) vnode.queues.removes.unshift(node);
 };
@@ -838,10 +830,10 @@ export {
   jsxs,
   jsxsDEV,
   memo,
+  Portal,
   Try,
   useCallback,
   useContext,
-  useContextProxy,
   useEffect,
   useMemo,
   useRef,
