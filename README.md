@@ -81,13 +81,12 @@ creating a new root somewhere in the DOM. To avoid creating duplicate APIs for
 achieving the same result, endr does not implement the portal component
 directly. Here's a sample implementation of `Portal`
   ```js
-  import { createRoot, useContextProxy } from 'endr';
+  import { createRoot, useContextProxy, useEffect, useMemo } from 'endr';
 
   /** @param {{ children: Children; to: Element }} props */
   const Portal = ({ children, to }) => {
     const root = useMemo(() => createRoot(to), [to]);
     useEffect(() => root.unmount, [root]);
-    const ContextProxy = useContextProxy();
-    root.render(<ContextProxy>{children}</ContextProxy>);
+    root.render(useContextProxy(children));
   };
   ```

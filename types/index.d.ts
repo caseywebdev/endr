@@ -568,9 +568,8 @@ export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
  * @param {T} Context
  */
 export function useContext<T extends Context<any>>(Context: T): ContextValue<T> | undefined;
-export function useContextProxy(): ({ children }: {
-    children: Children;
-}) => Children;
+/** @param {Children} children */
+export function useContextProxy(children: Children): Children;
 /**
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]

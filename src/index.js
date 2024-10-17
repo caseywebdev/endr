@@ -445,17 +445,20 @@ const useContext = Context => {
   return /** @type {ContextValue<T> | undefined} */ (context?.value);
 };
 
-const useContextProxy = () => {
+/** @param {Children} children */
+const useContextProxy = children => {
   const { contexts } = /** @type {Vnode} */ (currentVnode);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() =>
-    /** @param {{ children: Children }} props */
-    ({ children }) => {
-      /** @type {Vnode} */ (currentVnode).contexts = contexts;
-      return children;
-    }
-  );
+  for (const Context of contexts?.keys() ?? []) {
+    children = {
+      type: Context,
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      props: { children, value: useContext(Context) },
+      key: undefined
+    };
+  }
+
+  return children;
 };
 
 /**

@@ -31,20 +31,19 @@ const Flaky = ({ children }) => {
   return children;
 };
 
-const PortalNow = () => (
+const PortalNow = memo(() => (
   <div
     style={{ background: '#fff9', borderRadius: '0.25rem', padding: '1rem' }}
   >
     Portal: {useContext(Context)}
   </div>
-);
+));
 
 /** @param {{ children: Children; to: Element }} props */
 const Portal = ({ children, to }) => {
-  const ContextProxy = useContextProxy();
   const root = useMemo(() => createRoot(to), [to]);
   useEffect(() => root.unmount, [root]);
-  root.render(<ContextProxy>{children}</ContextProxy>);
+  root.render(useContextProxy(children));
 };
 
 /** @param {{ x: number; y: number }} props */
