@@ -4,6 +4,7 @@ import {
   createContext,
   createRoot,
   memo,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -55,6 +56,13 @@ const Tile = memo(({ x, y }) => {
   const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
   const [color, setColor] = useState('black');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const activate = useCallback(() => {
+    setColor(activeColor);
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+  });
+
   return (
     <Try
       catch={
@@ -66,12 +74,8 @@ const Tile = memo(({ x, y }) => {
       }
     >
       <div
-        onpointermove={() => {
-          setColor(activeColor);
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => setColor('black'), 5000);
-        }}
-        ontouchmove={ev => ev.preventDefault()}
+        onpointerdown={activate}
+        onpointermove={activate}
         style={{
           alignItems: 'center',
           backgroundColor: color,
