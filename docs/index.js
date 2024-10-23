@@ -11,6 +11,8 @@ import {
   useState
 } from 'endr';
 
+import useList from './use-list.js';
+
 /** @import {Children} from 'endr' */
 
 const { clearTimeout, document, setTimeout, setInterval } = globalThis;
@@ -114,6 +116,12 @@ const Root = () => {
     setInterval(() => setNow(new Date().getSeconds()), 1000);
   }, []);
 
+  const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const { start, end, before, after } = useList({
+    containerRef,
+    length: 10000
+  });
+
   return (
     <Context value={now}>
       <div
@@ -128,6 +136,23 @@ const Root = () => {
       >
         {Array.from({ length: resolution * resolution }, (_, i) => (
           <Tile key={i} x={i % resolution} y={Math.floor(i / resolution)} />
+        ))}
+      </div>
+      <div
+        ref={containerRef}
+        style={{
+          color: 'white',
+          paddingTop: `${before}px`,
+          paddingBottom: `${after}px`
+        }}
+      >
+        {Array.from({ length: end - start }, (_, i) => (
+          <div
+            key={i + start}
+            style={{ borderTop: '1px solid #222', padding: '1rem' }}
+          >
+            Item {i + start + 1}
+          </div>
         ))}
       </div>
       <button
