@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'endr';
+import { useCallback, useEffect, useMemo, useState } from 'endr';
 
 const { document, getComputedStyle, Document, ResizeObserver, window, Window } =
   globalThis;
@@ -63,7 +63,8 @@ export default ({
   minIndex = 0,
   shrinkBuffer = growBuffer + 200
 }) => {
-  const { current: internal } = useRef({
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const internal = useMemo(() => ({
     cache: /** @type {{ [key: number]: number }} */ ({}),
     columns: 1,
     isRendering: false,
@@ -87,7 +88,7 @@ export default ({
       internal.scrollTarget = null;
       internal.syncUpdateCount = 0;
     }
-  });
+  }));
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const update = useCallback(() => {
