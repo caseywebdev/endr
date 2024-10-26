@@ -54,10 +54,6 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
   function.
 - `useState` does not accept an initializer function. If memoizing an initial
   value is required, use `useState(useMemo(() => value))`
-- The state setter returned by `useState` will set state to the value passed and
-  does not invoke any functions passed. This is trivial to implement as a
-  wrapped `useState` hook if needed. Endr attempts to minimize overloaded
-  functions in the effort to remain focused on core essentials.
 - The `jsx: 'automatic'` setting for JSX transpilers is required if using JSX.
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
