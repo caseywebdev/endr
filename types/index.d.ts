@@ -173,7 +173,9 @@ export function useRef<T>(initial: T): Ref<T>;
  * @template T
  * @param {T} initial
  */
-export function useState<T>(initial: T): [T, <U extends T>(value: U | ((current: T) => U)) => U];
+export function useState<T>(initial: T): [T, (<U extends T>(value: U) => U) & {
+    current: T;
+}];
 /**
  * @template {HTMLElement | SVGElement | Text} T
  * @param {T} node

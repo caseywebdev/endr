@@ -358,21 +358,24 @@ const useMemo = (fn, deps = emptyDeps) => {
  */
 const useState = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
-  /** @type {[T, <U extends T>(value: U | ((current: T) => U)) => U]} */
+  /** @type {[T, (<U extends T>(value: U) => U) & { current: T }]} */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const state = useMemo(() => [
     initial,
-    next => {
-      const value =
-        typeof next === 'function'
-          ? /** @type {Function} */ (next)(state[0])
-          : next;
-      if (value !== state[0]) {
-        state[0] = value;
-        queueUpdate(vnode);
-      }
-      return value;
-    }
+    Object.assign(
+      /**
+       * @template {T} U
+       * @param {U} value
+       */
+      value => {
+        if (value !== state[0]) {
+          state[0] = state[1].current = value;
+          queueUpdate(vnode);
+        }
+        return value;
+      },
+      { current: initial }
+    )
   ]);
   return state;
 };
