@@ -72,6 +72,9 @@ export type Vnode = {
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
 export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
+export type State<T> = [T, (<U extends T>(value: U) => U) & {
+    readonly getCurrent: () => T;
+}];
 /** @template T */
 export function createContext<T>(): ({ value, children }: {
     value: T;
@@ -173,9 +176,7 @@ export function useRef<T>(initial: T): Ref<T>;
  * @template T
  * @param {T} initial
  */
-export function useState<T>(initial: T): [T, (<U extends T>(value: U) => U) & {
-    current: T;
-}];
+export function useState<T>(initial: T): State<T>;
 /**
  * @template {HTMLElement | SVGElement | Text} T
  * @param {T} node

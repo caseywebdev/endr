@@ -54,13 +54,13 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
   function.
 - `useState` does not accept an initializer function. If memoizing an initial
   value is required, use `useState(useMemo(() => value))`
-- `setState` does not accept a function argument. To set a state value based on the current value `setState.current` can be used.
+- `setState` does not accept a function setter. To set a state value based on the current value use `setState.getCurrent()`.
   ```js
-  setState({ ...setState.current, foo: 'bar' });
+  setState([...setState.getCurrent(), { foo: 'bar' }]);
   ```
   is equivalent to React's
   ```js
-  setState(current => ({ ...current, foo: 'bar' }))
+  setState(current => [...current, { foo: 'bar' }]);
   ```
 - The `jsx: 'automatic'` setting for JSX transpilers is required if using JSX.
 - There is no `useLayoutEffect`.
