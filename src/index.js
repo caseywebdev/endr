@@ -135,13 +135,17 @@
 
 /**
  * @template T
- * @typedef {[
- *   T,
- *   (<U extends T>(value: U) => U) & { readonly getCurrent: () => T }
- * ]} State
+ * @typedef {<U extends T>(
+ *   value: (T extends Function ? never : U) | ((current: T) => U)
+ * ) => U} SetState
  */
 
-const { console, document, queueMicrotask, Text } = globalThis;
+/**
+ * @template T
+ * @typedef {[T, SetState<T>]} State
+ */
+
+const { console, document, Function, queueMicrotask, Text } = globalThis;
 
 /**
  * @template {Type} T
@@ -228,7 +232,7 @@ const defaultCatch = exception => console.error(exception);
  * @param {Element} parentNode
  */
 const createNode = (type, props, parentNode) => {
-  if (typeof type === 'function' || type === emptyType) return null;
+  if (type instanceof Function || type === emptyType) return null;
 
   if (type === textType) {
     return document.createTextNode(
@@ -315,14 +319,14 @@ let refIndex = 0;
 
 /**
  * @template T
- * @param {T} initial
+ * @param {T | (() => T)} initial
  */
 const useRef = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   vnode.refs ??= [];
   let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
   if (!ref) {
-    ref = { current: initial };
+    ref = { current: initial instanceof Function ? initial() : initial };
     vnode.refs.push(ref);
   }
   return ref;
@@ -349,11 +353,8 @@ const useEffect = (fn, deps) => {
  * @param {unknown[]} deps
  */
 const useMemo = (fn, deps = emptyDeps) => {
-  const ref = useRef(
-    /** @type {{ value: T; deps: unknown[] }} */ (/** @type {unknown} */ (null))
-  );
-  if (!ref.current) ref.current = { value: fn(), deps };
-  else if (depsChanged(ref.current.deps, deps)) {
+  const ref = useRef(() => ({ value: fn(), deps }));
+  if (depsChanged(ref.current.deps, deps)) {
     ref.current.value = fn();
     ref.current.deps = deps;
   }
@@ -362,33 +363,25 @@ const useMemo = (fn, deps = emptyDeps) => {
 
 /**
  * @template T
- * @param {T} initial
+ * @param {T | (() => T)} initial
  */
 const useState = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   /** @type {State<T>} */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const state = useMemo(() => [
-    initial,
-    /** @type {State<T>[1]} */ (
-      Object.defineProperty(
-        /**
-         * @template {T} U
-         * @param {U} value
-         */
-        value => {
-          if (value !== state[0]) {
-            state[0] = value;
-            queueUpdate(vnode);
-          }
-          return value;
-        },
-        'getCurrent',
-        { value: () => state[0], writable: false }
-      )
-    )
+    initial instanceof Function ? initial() : initial,
+    maybeValue => {
+      const value =
+        maybeValue instanceof Function ? maybeValue(state[0]) : maybeValue;
+      if (value !== state[0]) {
+        state[0] = value;
+        queueUpdate(vnode);
+      }
+      return value;
+    }
   ]);
-  return state;
+  return /** @type {State<T>} */ ([...state]);
 };
 
 /**
@@ -409,7 +402,7 @@ const depsChanged = (before, after) => {
  * @param {T} fn
  */
 const useCallback = fn => {
-  const ref = useRef(fn);
+  const ref = useRef(() => fn);
   ref.current = fn;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => /** @type {T} */ ((...args) => ref.current(...args)));
@@ -506,7 +499,7 @@ const queueUpdate = vnode => {
 /** @param {Vnode} vnode */
 const getDefs = vnode => {
   let { children } = vnode.props;
-  if (typeof vnode.type === 'function') {
+  if (vnode.type instanceof Function) {
     const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
     currentVnode = vnode;
     effectIndex = 0;
@@ -538,7 +531,7 @@ const normalizeDef = def => {
     typeof def === 'object' &&
     Object.keys(def).length === 3 &&
     'type' in def &&
-    (typeof def.type === 'string' || typeof def.type === 'function') &&
+    (typeof def.type === 'string' || def.type instanceof Function) &&
     'props' in def &&
     def.props &&
     typeof def.props === 'object' &&
@@ -619,7 +612,7 @@ const update = vnode => {
       child.index = i;
       child.sibling = null;
       if (
-        typeof child.type !== 'function' ||
+        !(child.type instanceof Function) ||
         !child.type.memo?.(child.props, props)
       ) {
         if (child.node) {

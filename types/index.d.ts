@@ -72,9 +72,8 @@ export type Vnode = {
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
 export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
-export type State<T> = [T, (<U extends T>(value: U) => U) & {
-    readonly getCurrent: () => T;
-}];
+export type SetState<T> = <U extends T>(value: (T extends Function ? never : U) | ((current: T) => U)) => U;
+export type State<T> = [T, SetState<T>];
 /** @template T */
 export function createContext<T>(): ({ value, children }: {
     value: T;
@@ -169,14 +168,14 @@ export function useEffect(fn: AfterEffect, deps?: unknown[] | undefined): void;
 export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
 /**
  * @template T
- * @param {T} initial
+ * @param {T | (() => T)} initial
  */
-export function useRef<T>(initial: T): Ref<T>;
+export function useRef<T>(initial: T | (() => T)): Ref<T>;
 /**
  * @template T
- * @param {T} initial
+ * @param {T | (() => T)} initial
  */
-export function useState<T>(initial: T): State<T>;
+export function useState<T>(initial: T | (() => T)): State<T>;
 /**
  * @template {HTMLElement | SVGElement | Text} T
  * @param {T} node

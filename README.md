@@ -37,7 +37,8 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
     on the element. For example `onclick` instead of `onClick` and `ondblclick`
     instead of `onDoubleClick`.
 - `ref` is not a special property on function components (it is passed through
-  without something like `ForwardRef`)
+  without something like `ForwardRef`).
+- `useRef` accepts an initializer function.
 - `createContext` returns the equivalent of a React `Context.Provider`
   component.
   - There is no `Context.Consumer` component. Access context values through
@@ -49,19 +50,9 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
   be achieved with `const sumAB = useMemo(() => () => a + b, [a, b])`
 - `useMemo` can be called without a second argument to default to an empty
   dependency array.
-- `useState` returns the most recently set value.
+- `setState` returns the most recently set value.
 - `setState` will not queue a re-render when it is called during the render
   function.
-- `useState` does not accept an initializer function. If memoizing an initial
-  value is required, use `useState(useMemo(() => value))`
-- `setState` does not accept a function setter. To set a state value based on the current value use `setState.getCurrent()`.
-  ```js
-  setState([...setState.getCurrent(), { foo: 'bar' }]);
-  ```
-  is equivalent to React's
-  ```js
-  setState(current => [...current, { foo: 'bar' }]);
-  ```
 - The `jsx: 'automatic'` setting for JSX transpilers is required if using JSX.
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
