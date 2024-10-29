@@ -25,9 +25,10 @@ baggage over its long career that it must maintain for backwards compatibility.
 Endr loses the baggage and keeps the modern API.
 
 # Config
-Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
-  (`babel`, `esbuild`, etc) to get correct autocomplete and rendered output. If
-  you forget to do this you'll see errors about `React` not being found.
+Use `jsx: automatic` and `jsxImportSource: 'endr'` in your `tsconfig.json` and
+JSX transpiler (`babel`, `esbuild`, etc) to get correct autocomplete and
+rendered output. If you forget to do this you'll see errors about `React` not
+being found.
 
 # Differences from React
 - There are no class components.
@@ -43,17 +44,16 @@ Use `jsxImportSource: 'endr'` in your `tsconfig.json` and JSX transpiler
   component.
   - There is no `Context.Consumer` component. Access context values through
     `useContext(Context)`.
-- `useCallback` does not take any arguments and will return a constant function
-  that will call the last seen function passed to `useCallback`. This is by far
-  the most useful case for memoizing functions. The much less common case of
-  memoizing a callback that creates a new function when dependencies change can
-  be achieved with `const sumAB = useMemo(() => () => a + b, [a, b])`
+- `useCallback` does not take a second argument and will return a constant
+  function that will call the last seen function passed to `useCallback`. The
+  less common case of memoizing a callback that creates a new function when
+  dependencies change can be achieved with
+  `const sumAB = useMemo(() => () => a + b, [a, b])`.
 - `useMemo` can be called without a second argument to default to an empty
   dependency array.
 - `setState` returns the most recently set value.
 - `setState` will not queue a re-render when it is called during the render
   function.
-- The `jsx: 'automatic'` setting for JSX transpilers is required if using JSX.
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
 - Portals can be used with the `Portal` component instead of `createPortal`.
