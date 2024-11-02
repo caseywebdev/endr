@@ -145,7 +145,7 @@
  * @typedef {[T, SetState<T>]} State
  */
 
-const { console, document, Function, queueMicrotask, Text } = globalThis;
+const { console, queueMicrotask } = globalThis;
 
 /**
  * @template {Type} T
@@ -164,6 +164,42 @@ const jsxs = jsx;
 const jsxDEV = jsx;
 
 const jsxsDEV = jsx;
+
+const emptyProps = /** @type {const} */ ({});
+
+const emptyType = /** @type {Type} */ ({});
+
+const emptyDef = jsx(emptyType, emptyProps);
+
+const textType = /** @type {Type} */ ({});
+
+const emptyDeps = /** @type {unknown[]} */ ([]);
+
+const svgNs = 'http://www.w3.org/2000/svg';
+
+/** @type {Vnode['catch']} */
+const defaultCatch = exception => console.error(exception);
+
+/** @param {unknown} value */
+const isEmpty = value => value == null || value === false || value === '';
+
+/**
+ * @param {unknown} value
+ * @returns {value is Function}
+ */
+const isFunction = value => typeof value === 'function';
+
+/**
+ * @param {unknown} value
+ * @returns {value is (unknown)[]}
+ */
+const isArray = value => Array.isArray(value);
+
+/**
+ * @param {unknown} value
+ * @returns {value is {[key: string]: unknown}}
+ */
+const isObject = value => typeof value === 'object';
 
 /** @param {{ children?: Children }} props */
 const Fragment = props => props.children;
@@ -208,40 +244,22 @@ const createContext = () => {
   return Context;
 };
 
-/** @param {unknown} value */
-const isEmpty = value => value == null || value === false || value === '';
-
-const emptyProps = /** @type {const} */ ({});
-
-const emptyType = /** @type {Type} */ ({});
-
-const emptyDef = jsx(emptyType, emptyProps);
-
-const textType = /** @type {Type} */ ({});
-
-const emptyDeps = /** @type {unknown[]} */ ([]);
-
-const svgNs = 'http://www.w3.org/2000/svg';
-
-/** @type {Vnode['catch']} */
-const defaultCatch = exception => console.error(exception);
-
 /**
  * @param {Type} type
  * @param {Props} props
  * @param {Element} parentNode
  */
 const createNode = (type, props, parentNode) => {
-  if (type instanceof Function || type === emptyType) return null;
+  if (isFunction(type) || type === emptyType) return null;
 
   if (type === textType) {
-    return document.createTextNode(
+    return parentNode.ownerDocument.createTextNode(
       /** @type {{ nodeValue: string }} */ (props).nodeValue
     );
   }
 
   const node = /** @type {HTMLElement | SVGElement} */ (
-    document.createElementNS(
+    parentNode.ownerDocument.createElementNS(
       type === 'svg' ? svgNs : parentNode.namespaceURI,
       type
     )
@@ -251,12 +269,18 @@ const createNode = (type, props, parentNode) => {
 };
 
 /**
+ * @param {Node} node
+ * @returns {node is Text}
+ */
+const isText = node => node.nodeType === node.TEXT_NODE;
+
+/**
  * @template {Element} Node
  * @param {Node} node
  * @param {keyof Node} key
  */
 const isSimpleProperty = (node, key) =>
-  key in node && (node[key] == null || typeof node[key] !== 'object');
+  key in node && (node[key] == null || !isObject(node[key]));
 
 /**
  * @param {CSSStyleDeclaration} style
@@ -275,7 +299,7 @@ const setStyle = (style, prev, next) => {
  * @param {Props<T>} next
  */
 const updateNode = (node, prev, next) => {
-  if (node instanceof Text) {
+  if (isText(node)) {
     node.nodeValue = /** @type {string} */ (next.nodeValue);
     return;
   }
@@ -296,10 +320,10 @@ const updateNode = (node, prev, next) => {
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
       if (next.ref) next.ref.current = node;
-    } else if (key === 'style' && next[key] && typeof next[key] === 'object') {
+    } else if (key === 'style' && next[key] && isObject(next[key])) {
       setStyle(
         node.style,
-        prev[key] && typeof prev[key] === 'object' ? prev[key] : {},
+        prev[key] && isObject(prev[key]) ? prev[key] : {},
         next[key]
       );
       // @ts-ignore
@@ -326,7 +350,7 @@ const useRef = initial => {
   vnode.refs ??= [];
   let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
   if (!ref) {
-    ref = { current: initial instanceof Function ? initial() : initial };
+    ref = { current: isFunction(initial) ? initial() : initial };
     vnode.refs.push(ref);
   }
   return ref;
@@ -370,10 +394,9 @@ const useState = initial => {
   /** @type {State<T>} */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const state = useMemo(() => [
-    initial instanceof Function ? initial() : initial,
+    isFunction(initial) ? initial() : initial,
     maybeValue => {
-      const value =
-        maybeValue instanceof Function ? maybeValue(state[0]) : maybeValue;
+      const value = isFunction(maybeValue) ? maybeValue(state[0]) : maybeValue;
       if (value !== state[0]) {
         state[0] = value;
         queueUpdate(vnode);
@@ -499,7 +522,7 @@ const queueUpdate = vnode => {
 /** @param {Vnode} vnode */
 const getDefs = vnode => {
   let { children } = vnode.props;
-  if (vnode.type instanceof Function) {
+  if (isFunction(vnode.type)) {
     const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
     currentVnode = vnode;
     effectIndex = 0;
@@ -513,11 +536,7 @@ const getDefs = vnode => {
       [currentVnode, effectIndex, refIndex] = prev;
     }
   }
-  return isEmpty(children)
-    ? []
-    : Array.isArray(children)
-      ? children
-      : [children];
+  return isEmpty(children) ? [] : isArray(children) ? children : [children];
 };
 
 /** @param {unknown} def */
@@ -528,13 +547,13 @@ const normalizeDef = def => {
 
   if (
     def &&
-    typeof def === 'object' &&
+    isObject(def) &&
     Object.keys(def).length === 3 &&
     'type' in def &&
-    (typeof def.type === 'string' || def.type instanceof Function) &&
+    (typeof def.type === 'string' || isFunction(def.type)) &&
     'props' in def &&
     def.props &&
-    typeof def.props === 'object' &&
+    isObject(def.props) &&
     'key' in def
   ) {
     return /** @type {Def} */ (def);
@@ -611,10 +630,7 @@ const update = vnode => {
       );
       child.index = i;
       child.sibling = null;
-      if (
-        !(child.type instanceof Function) ||
-        !child.type.memo?.(child.props, props)
-      ) {
+      if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
         if (child.node) {
           nodeUpdate = /** @type {Parameters<typeof updateNode>} */ ([
             child.node,
