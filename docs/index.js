@@ -44,7 +44,7 @@ const Portaled = memo(() => (
 
 /** @param {{ x: number; y: number }} props */
 const Tile = memo(({ x, y }) => {
-  const now = useContext(Context) ?? 0;
+  const now = useContext(Context);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const activeColor = useMemo(
@@ -111,7 +111,7 @@ const Tile = memo(({ x, y }) => {
   );
 });
 
-const Context = /** @type {typeof createContext<number>} */ (createContext)();
+const Context = createContext(0);
 
 const Root = () => {
   const [now, setNow] = useState(new Date().getSeconds());

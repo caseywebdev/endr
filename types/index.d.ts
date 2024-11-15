@@ -71,14 +71,18 @@ export type Vnode = {
     type: Type;
 };
 export type Context<T> = ReturnType<typeof createContext<T>>;
-export type ContextValue<T extends Context<unknown>> = Parameters<T>[0]["value"];
 export type SetState<T> = <U extends T>(value: (T extends Function ? never : U) | ((current: T) => U)) => U;
 export type State<T> = [T, SetState<T>];
-/** @template T */
-export function createContext<T>(): ({ value, children }: {
+/**
+ * @template T
+ * @param {T} value
+ */
+export function createContext<T>(value: T): (({ value, children }: {
     value: T;
     children?: Children;
-}) => Children;
+}) => Children) & {
+    value: T;
+};
 /** @param {Element} parentNode */
 export function createRoot(parentNode: Element): Root;
 /** @param {{ children?: Children }} props */
@@ -154,7 +158,7 @@ export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
  * @template {Context<any>} T
  * @param {T} Context
  */
-export function useContext<T extends Context<any>>(Context: T): ContextValue<T> | undefined;
+export function useContext<T extends Context<any>>(Context: T): T["value"];
 /**
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]

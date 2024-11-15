@@ -129,11 +129,6 @@
  */
 
 /**
- * @template {Context<unknown>} T
- * @typedef {Parameters<T>[0]['value']} ContextValue
- */
-
-/**
  * @template T
  * @typedef {<U extends T>(
  *   value: (T extends Function ? never : U) | ((current: T) => U)
@@ -213,33 +208,39 @@ const Try = props => {
   return props.children;
 };
 
-/** @template T */
-const createContext = () => {
-  /** @param {{ value: T; children?: Children }} props */
-  const Context = ({ value, children }) => {
-    const vnode = /** @type {Vnode} */ (currentVnode);
+/**
+ * @template T
+ * @param {T} value
+ */
+const createContext = value => {
+  const Context = Object.assign(
+    /** @param {{ value: T; children?: Children }} props */
+    ({ value, children }) => {
+      const vnode = /** @type {Vnode} */ (currentVnode);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const context = useMemo(() => {
-      const context = { deps: /** @type {Set<Vnode>} */ (new Set()), value };
-      vnode.contexts = new Map(vnode.contexts).set(Context, context);
-      return context;
-    });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const context = useMemo(() => {
+        const context = { deps: /** @type {Set<Vnode>} */ (new Set()), value };
+        vnode.contexts = new Map(vnode.contexts).set(Context, context);
+        return context;
+      });
 
-    if (value !== context.value) {
-      context.value = value;
-      for (const dep of context.deps) {
-        dep.state = 1;
-        let { parent } = dep;
-        while (parent && parent !== vnode && !parent.state) {
-          parent.state = 2;
-          ({ parent } = parent);
+      if (value !== context.value) {
+        context.value = value;
+        for (const dep of context.deps) {
+          dep.state = 1;
+          let { parent } = dep;
+          while (parent && parent !== vnode && !parent.state) {
+            parent.state = 2;
+            ({ parent } = parent);
+          }
         }
       }
-    }
 
-    return children;
-  };
+      return children;
+    },
+    { value }
+  );
 
   return Context;
 };
@@ -471,7 +472,7 @@ const useContext = Context => {
     return () => context.deps.delete(vnode);
   }, [context, vnode]);
 
-  return /** @type {ContextValue<T> | undefined} */ (context?.value);
+  return /** @type {T['value']} */ ((context ?? Context).value);
 };
 
 /**
