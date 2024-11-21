@@ -130,6 +130,7 @@ const Root = () => {
     <Context value={now}>
       <div
         style={{
+          boxSizing: 'border-box',
           cursor: 'crosshair',
           display: 'grid',
           gap: '0.25rem',

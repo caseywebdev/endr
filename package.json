@@ -1,7 +1,7 @@
 {
   "name": "endr",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "repository": {
@@ -30,9 +30,6 @@
   },
   "eslintConfig": {
     "root": true,
-    "extends": "coderiety",
-    "rules": {
-      "react/no-unknown-property": "off"
-    }
+    "extends": "coderiety"
   }
 }
