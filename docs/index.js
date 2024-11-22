@@ -63,6 +63,8 @@ const Tile = memo(({ x, y }) => {
     timeoutRef.current = setTimeout(() => setColor('black'), 5000);
   });
 
+  const selectLength = 1 + Math.floor(Math.random() * 10);
+
   return (
     <Try
       catch={
@@ -82,6 +84,8 @@ const Tile = memo(({ x, y }) => {
           borderRadius: '0.25rem',
           display: 'flex',
           fontSize: '0.75rem',
+          flexDirection: 'column',
+          gap: '0.25rem',
           justifyContent: 'center',
           minWidth: '0',
           overflow: 'hidden',
@@ -90,6 +94,15 @@ const Tile = memo(({ x, y }) => {
           transition: color === 'black' ? 'all 5s' : ''
         }}
       >
+        <select
+          value={(Math.floor(Math.random() * selectLength) + 1).toString()}
+        >
+          {Array.from({ length: selectLength }, (_, i) => (
+            <option key={i} value={(i + 1).toString()}>
+              {i + 1}
+            </option>
+          ))}
+        </select>
         {color === 'red' ? (
           'Fake Render Error'
         ) : color === 'blue' ? (

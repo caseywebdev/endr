@@ -253,24 +253,19 @@ const createContext = value => {
  * @param {Props} props
  * @param {Element} parentNode
  */
-const createNode = (type, props, parentNode) => {
-  if (isFunction(type) || type === emptyType) return null;
-
-  if (type === textType) {
-    return parentNode.ownerDocument.createTextNode(
-      /** @type {{ nodeValue: string }} */ (props).nodeValue
-    );
-  }
-
-  const node = /** @type {HTMLElement | SVGElement} */ (
-    parentNode.ownerDocument.createElementNS(
-      type === 'svg' ? svgNs : parentNode.namespaceURI,
-      type
-    )
-  );
-  updateNode(node, {}, /** @type {Props<typeof node>} */ (props));
-  return node;
-};
+const createNode = (type, props, parentNode) =>
+  isFunction(type) || type === emptyType
+    ? null
+    : type === textType
+      ? parentNode.ownerDocument.createTextNode(
+          /** @type {{ nodeValue: string }} */ (props).nodeValue
+        )
+      : /** @type {HTMLElement | SVGElement} */ (
+          parentNode.ownerDocument.createElementNS(
+            type === 'svg' ? svgNs : parentNode.namespaceURI,
+            type
+          )
+        );
 
 /**
  * @param {Node} node
@@ -297,7 +292,7 @@ const setStyle = (style, prev, next) => {
 };
 
 /**
- * @template {HTMLElement | SVGElement | Text} T
+ * @template {Element | Text} T
  * @param {T} node
  * @param {Props<T>} prev
  * @param {Props<T>} next
@@ -326,7 +321,7 @@ const updateNode = (node, prev, next) => {
       if (next.ref) next.ref.current = node;
     } else if (key === 'style' && next[key] && isObject(next[key])) {
       setStyle(
-        node.style,
+        /** @type {HTMLElement | SVGElement} */ (node).style,
         prev[key] && isObject(prev[key]) ? prev[key] : {},
         next[key]
       );
@@ -626,6 +621,7 @@ const update = vnode => {
     const { type, props, key } = normalizeDef(defs[i]);
     let child = prevChildren?.get(key ?? i);
     let needsMove = false;
+    /** @type {Parameters<typeof updateNode> | null} */
     let nodeUpdate = null;
     let needsInsert = false;
     if (child?.type === type) {
@@ -635,13 +631,7 @@ const update = vnode => {
       child.index = i;
       child.sibling = null;
       if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
-        if (child.node) {
-          nodeUpdate = /** @type {Parameters<typeof updateNode>} */ ([
-            child.node,
-            child.props,
-            props
-          ]);
-        }
+        if (child.node) nodeUpdate = [child.node, child.props, props];
         child.props = props;
         child.state = 1;
       }
@@ -757,17 +747,18 @@ const flush = queues => {
 
   queues.moves = [];
 
-  for (let i = 0; i < nodeUpdates.length; ++i) updateNode(...nodeUpdates[i]);
-
-  queues.nodeUpdates = [];
-
   for (let i = 0; i < inserts.length; ++i) {
-    const { node, parentNode, prevNode } = inserts[i];
+    const { node, parentNode, prevNode, props } = inserts[i];
+    updateNode(/** @type {Element} */ (node), emptyProps, props);
     if (prevNode) prevNode.after(/** @type {Element} */ (node));
     else parentNode.prepend(/** @type {Element} */ (node));
   }
 
   queues.inserts = [];
+
+  for (let i = 0; i < nodeUpdates.length; ++i) updateNode(...nodeUpdates[i]);
+
+  queues.nodeUpdates = [];
 
   for (let i = 0; i < afterEffects.length; ++i) {
     const vnode = afterEffects[i];

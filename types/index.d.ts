@@ -180,10 +180,10 @@ export function useRef<T>(initial: T | (() => T)): Ref<T>;
  */
 export function useState<T>(initial: T | (() => T)): State<T>;
 /**
- * @template {HTMLElement | SVGElement | Text} T
+ * @template {Element | Text} T
  * @param {T} node
  * @param {Props<T>} prev
  * @param {Props<T>} next
  */
-declare function updateNode<T extends HTMLElement | SVGElement | Text>(node: T, prev: Props<T>, next: Props<T>): void;
+declare function updateNode<T extends Element | Text>(node: T, prev: Props<T>, next: Props<T>): void;
 export {};
