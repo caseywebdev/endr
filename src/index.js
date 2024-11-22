@@ -103,6 +103,8 @@
  * }} Queues
  */
 
+/** @typedef {Element | ShadowRoot} ParentNode */
+
 /**
  * @typedef {{
  *   child: Vnode | null;
@@ -115,7 +117,7 @@
  *   node: Element | Text | null;
  *   catch: (exception: any) => void;
  *   parent: Vnode | null;
- *   parentNode: Element;
+ *   parentNode: ParentNode;
  *   prevNode: Element | Text | null;
  *   props: Props;
  *   queues: Queues;
@@ -202,7 +204,7 @@ const isObject = value => typeof value === 'object';
 /** @param {{ children?: Children }} props */
 const Fragment = props => props.children;
 
-/** @param {{ children?: Children; to: Element }} props */
+/** @param {{ children?: Children; to: ParentNode }} props */
 const Portal = props => props.children;
 
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
@@ -251,7 +253,7 @@ const createContext = value => {
 /**
  * @param {Type} type
  * @param {Props} props
- * @param {Element} parentNode
+ * @param {ParentNode} parentNode
  */
 const createNode = (type, props, parentNode) =>
   isFunction(type) || type === emptyType
@@ -260,11 +262,13 @@ const createNode = (type, props, parentNode) =>
       ? parentNode.ownerDocument.createTextNode(
           /** @type {{ nodeValue: string }} */ (props).nodeValue
         )
-      : /** @type {HTMLElement | SVGElement} */ (
-          parentNode.ownerDocument.createElementNS(
-            type === 'svg' ? svgNs : parentNode.namespaceURI,
-            type
-          )
+      : parentNode.ownerDocument.createElementNS(
+          type === 'svg'
+            ? svgNs
+            : 'namespaceURI' in parentNode
+              ? parentNode.namespaceURI
+              : parentNode.host.namespaceURI,
+          type
         );
 
 /**
@@ -608,7 +612,7 @@ const update = vnode => {
       child
     );
   }
-  const parentNode = /** @type {Element} */ (vnode.node ?? vnode.parentNode);
+  const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
   vnode.state = 0;
   vnode.child = null;
@@ -781,7 +785,7 @@ const flush = queues => {
   queues.afterEffects = [];
 };
 
-/** @param {Element} parentNode */
+/** @param {ParentNode} parentNode */
 const createRoot = parentNode => {
   /** @type {Queues} */
   const queues = {

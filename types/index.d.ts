@@ -46,6 +46,7 @@ export type Queues = {
     removes: (Element | Text)[];
     updates: Vnode[];
 };
+export type ParentNode = Element | ShadowRoot;
 export type Vnode = {
     child: Vnode | null;
     contexts: Map<Context<any>, {
@@ -60,7 +61,7 @@ export type Vnode = {
     node: Element | Text | null;
     catch: (exception: any) => void;
     parent: Vnode | null;
-    parentNode: Element;
+    parentNode: ParentNode;
     prevNode: Element | Text | null;
     props: Props;
     queues: Queues;
@@ -82,8 +83,8 @@ export function createContext<T>(value: T): (({ value, children }: {
 }) => Children) & {
     value: T;
 };
-/** @param {Element} parentNode */
-export function createRoot(parentNode: Element): Root;
+/** @param {ParentNode} parentNode */
+export function createRoot(parentNode: ParentNode): Root;
 /** @param {{ children?: Children }} props */
 export function Fragment(props: {
     children?: Children;
@@ -138,10 +139,10 @@ export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
  * @param {typeof defaultMemo} [memo]
  */
 export function memo<Component extends FC>(Component: Component, memo?: ((prev: Props, next: Props) => boolean) | undefined): Component;
-/** @param {{ children?: Children; to: Element }} props */
+/** @param {{ children?: Children; to: ParentNode }} props */
 export function Portal(props: {
     children?: Children;
-    to: Element;
+    to: ParentNode;
 }): Children;
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
 export function Try(props: {

@@ -184,6 +184,8 @@ const Root = () => {
 };
 
 const root = createRoot(
-  /** @type {Element} */ (document.getElementById('root'))
+  /** @type {Element} */ (document.getElementById('root')).attachShadow({
+    mode: 'open'
+  })
 );
 root.render(<Root />);
