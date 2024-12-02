@@ -24,6 +24,12 @@ fast virtual DOM rendering library. React is a great tool but has acquired some
 baggage over its long career that it must maintain for backwards compatibility.
 Endr loses the baggage and keeps the modern API.
 
+|Package|Size|
+|-|-:|
+|Endr|<a href="https://pkg-size.dev/endr"><img src="https://pkg-size.dev/badge/bundle/5947" title="Bundle size for endr"></a>|
+|Preact<br/>Preact Hooks|<a href="https://pkg-size.dev/preact"><img src="https://pkg-size.dev/badge/bundle/11456" title="Bundle size for preact"></a><br /><a href="https://pkg-size.dev/preact-hooks"><img src="https://pkg-size.dev/badge/bundle/13364" title="Bundle size for preact-hooks"></a>|
+|React<br/>React DOM|<a href="https://pkg-size.dev/react"><img src="https://pkg-size.dev/badge/bundle/6882" title="Bundle size for react"></a><br /><a href="https://pkg-size.dev/react-dom"><img src="https://pkg-size.dev/badge/bundle/141289" title="Bundle size for react-dom"></a>|
+
 # Config
 Use `jsx: automatic` and `jsxImportSource: 'endr'` in your `tsconfig.json` and
 JSX transpiler (`babel`, `esbuild`, etc) to get correct autocomplete and
