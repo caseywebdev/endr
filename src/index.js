@@ -415,6 +415,8 @@ const useState = initial => {
  * @param {unknown[]} after
  */
 const depsChanged = (before, after) => {
+  if (before === after) return false;
+
   let { length } = before;
   if (length !== after.length) return true;
 
