@@ -28,8 +28,8 @@
  * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   ref?: Ref<T | null>;
- *   style?: Partial<CSSStyleDeclaration> | string;
+ *   ref?: Ref<T | null> | null;
+ *   style?: Partial<CSSStyleDeclaration> | string | null;
  * }} SharedElementProps
  */
 
@@ -40,9 +40,14 @@
  *   [K in keyof Shared | keyof T]: K extends keyof Shared
  *     ? Shared[K]
  *     : K extends keyof T
- *       ? T[K] extends number | boolean | ((...args: any[]) => any) | null
+ *       ? T[K] extends
+ *           | number
+ *           | boolean
+ *           | ((...args: any[]) => any)
+ *           | null
+ *           | undefined
  *         ? T[K]
- *         : string | null
+ *         : string | null | undefined
  *       : never;
  * }>} SimpleProps
  */
@@ -58,9 +63,11 @@
  *   : T extends keyof HTMLElementTagNameMap
  *     ?
  *         | SimpleProps<HTMLElementTagNameMap[T]>
- *         | { [K in `data-${string}`]: string | null }
+ *         | { [K in `data-${string}`]: string | null | undefined }
  *     : T extends keyof SVGElementTagNameMap
- *       ? SimpleProps<SVGElementTagNameMap[T]> | { [K: string]: string | null }
+ *       ?
+ *           | SimpleProps<SVGElementTagNameMap[T]>
+ *           | { [K: string]: string | null | undefined }
  *       : UnknownElementProps} Props
  */
 
