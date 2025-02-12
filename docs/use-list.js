@@ -63,7 +63,6 @@ export default ({
   minIndex = 0,
   shrinkBuffer = growBuffer + 200
 }) => {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const internal = useMemo(() => ({
     cache: /** @type {{ [key: number]: number }} */ ({}),
     columns: 1,
@@ -90,7 +89,6 @@ export default ({
     }
   }));
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const update = useCallback(() => {
     if (internal.isRendering) return;
 
@@ -236,7 +234,6 @@ export default ({
     else update();
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const scrollTo = useCallback(
     /**
      * @param {{
@@ -294,7 +291,7 @@ export default ({
   });
   useMemo(() => {
     Object.assign(state, clamp({ end: state.end, start: state.start }));
-  }, [length, minIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [length, minIndex]);
 
   internal.observer ??= ResizeObserver && new ResizeObserver(update);
 

@@ -46,7 +46,6 @@ const Portaled = memo(() => (
 const Tile = memo(({ x, y }) => {
   const now = useContext(Context);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const activeColor = useMemo(
     () =>
       `rgb(${128 + ((x - y) / resolution) * 128}, ${128 + ((y - x) / resolution) * 128}, ${
@@ -56,7 +55,6 @@ const Tile = memo(({ x, y }) => {
   const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
   const [color, setColor] = useState('black');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const activate = useCallback(() => {
     setColor(activeColor);
     clearTimeout(timeoutRef.current);

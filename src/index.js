@@ -225,7 +225,6 @@ export const createContext = value => {
     ({ value, children }) => {
       const vnode = /** @type {Vnode} */ (currentVnode);
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       const context = useMemo(() => {
         const context = { deps: /** @type {Set<Vnode>} */ (new Set()), value };
         vnode.contexts = new Map(vnode.contexts).set(Context, context);
@@ -397,7 +396,6 @@ export const useMemo = (fn, deps = emptyDeps) => {
 export const useState = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   /** @type {State<T>} */
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const state = useMemo(() => [
     isFunction(initial) ? initial() : initial,
     maybeValue => {
@@ -434,7 +432,6 @@ const depsChanged = (before, after) => {
 export const useCallback = fn => {
   const ref = useRef(() => fn);
   ref.current = fn;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => /** @type {T} */ ((...args) => ref.current(...args)));
 };
 
