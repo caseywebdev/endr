@@ -92,12 +92,7 @@
  * }} Effect
  */
 
-/**
- * @typedef {{
- *   render: (children: Children) => void;
- *   unmount: () => void;
- * }} Root
- */
+/** @typedef {{ render: (children: Children) => void; unmount: () => void }} Root */
 
 /**
  * @typedef {{

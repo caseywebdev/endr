@@ -23,13 +23,9 @@
     }
   },
   "devDependencies": {
-    "esbuild": "0.24",
-    "eslint": "8",
+    "esbuild": "0.25",
+    "eslint": "9",
     "eslint-config-coderiety": "2",
     "typescript": "5"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": "coderiety"
   }
 }

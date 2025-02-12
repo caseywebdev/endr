@@ -6,6 +6,6 @@
     "target": "ESNext",
     "jsx": "preserve",
     "jsxImportSource": "endr",
-    "module": "NodeNext",
+    "module": "NodeNext"
   }
 }
