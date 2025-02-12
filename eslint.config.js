@@ -1,1 +1,3 @@
-export { default } from 'eslint-config-coderiety';
+import config from 'eslint-config-coderiety';
+
+export default [...config, { rules: { 'import/no-named-export': 'off' } }];

@@ -1,3 +1,48 @@
+export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+    type: T;
+    props: Props<T>;
+    key: any;
+};
+export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+    type: T;
+    props: Props<T>;
+    key: any;
+};
+export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+    type: T;
+    props: Props<T>;
+    key: any;
+};
+export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+    type: T;
+    props: Props<T>;
+    key: any;
+};
+export function Fragment(props: {
+    children?: Children;
+}): Children;
+export function Portal(props: {
+    children?: Children;
+    to: ParentNode;
+}): Children;
+export function Try(props: {
+    children?: Children;
+    catch: Vnode["catch"];
+}): Children;
+export function createContext<T>(value: T): (({ value, children }: {
+    value: T;
+    children?: Children;
+}) => Children) & {
+    value: T;
+};
+export function useRef<T>(initial: T | (() => T)): Ref<T>;
+export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
+export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
+export function useState<T>(initial: T | (() => T)): State<T>;
+export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
+export function memo<Component extends FC>(Component: Component, memo?: typeof defaultMemo): Component;
+export function useContext<T extends Context<any>>(Context: T): T["value"];
+export function createRoot(parentNode: ParentNode): Root;
 export type Recursive<T> = T | RecursiveArray<T>;
 export type RecursiveArray<T> = Recursive<T>[];
 export type Children = Recursive<Def | string | number | false | null | undefined | void>;
@@ -74,112 +119,10 @@ export type Context<T> = ReturnType<typeof createContext<T>>;
 export type SetState<T> = <U extends T>(value: (T extends Function ? never : U) | ((current: T) => U)) => U;
 export type State<T> = [T, SetState<T>];
 /**
- * @template T
- * @param {T} value
+ * @param {Props} prev
+ * @param {Props} next
  */
-export function createContext<T>(value: T): (({ value, children }: {
-    value: T;
-    children?: Children;
-}) => Children) & {
-    value: T;
-};
-/** @param {ParentNode} parentNode */
-export function createRoot(parentNode: ParentNode): Root;
-/** @param {{ children?: Children }} props */
-export function Fragment(props: {
-    children?: Children;
-}): Children;
-/**
- * @template {Type} T
- * @param {T} type
- * @param {Props<T>} props
- * @param {Key} [key]
- */
-export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
-    type: T;
-    props: Props<T>;
-    key: any;
-};
-/**
- * @template {Type} T
- * @param {T} type
- * @param {Props<T>} props
- * @param {Key} [key]
- */
-export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
-    type: T;
-    props: Props<T>;
-    key: any;
-};
-/**
- * @template {Type} T
- * @param {T} type
- * @param {Props<T>} props
- * @param {Key} [key]
- */
-export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
-    type: T;
-    props: Props<T>;
-    key: any;
-};
-/**
- * @template {Type} T
- * @param {T} type
- * @param {Props<T>} props
- * @param {Key} [key]
- */
-export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
-    type: T;
-    props: Props<T>;
-    key: any;
-};
-/**
- * @template {FC} Component
- * @param {Component} Component
- * @param {typeof defaultMemo} [memo]
- */
-export function memo<Component extends FC>(Component: Component, memo?: typeof defaultMemo): Component;
-/** @param {{ children?: Children; to: ParentNode }} props */
-export function Portal(props: {
-    children?: Children;
-    to: ParentNode;
-}): Children;
-/** @param {{ children?: Children; catch: Vnode['catch'] }} props */
-export function Try(props: {
-    children?: Children;
-    catch: Vnode["catch"];
-}): Children;
-/**
- * @template {(...args: any[]) => any} T
- * @param {T} fn
- */
-export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
-/**
- * @template {Context<any>} T
- * @param {T} Context
- */
-export function useContext<T extends Context<any>>(Context: T): T["value"];
-/**
- * @param {AfterEffect} fn
- * @param {unknown[]} [deps]
- */
-export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
-/**
- * @template T
- * @param {(...args: unknown[]) => T} fn
- * @param {unknown[]} deps
- */
-export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
-/**
- * @template T
- * @param {T | (() => T)} initial
- */
-export function useRef<T>(initial: T | (() => T)): Ref<T>;
-/**
- * @template T
- * @param {T | (() => T)} initial
- */
-export function useState<T>(initial: T | (() => T)): State<T>;
+declare function defaultMemo(prev: Props, next: Props): boolean;
 /**
  * @template {Element | Text} T
  * @param {T} node
@@ -187,9 +130,4 @@ export function useState<T>(initial: T | (() => T)): State<T>;
  * @param {Props<T>} next
  */
 declare function updateNode<T extends Element | Text>(node: T, prev: Props<T>, next: Props<T>): void;
-/**
- * @param {Props} prev
- * @param {Props} next
- */
-declare function defaultMemo(prev: Props, next: Props): boolean;
 export {};

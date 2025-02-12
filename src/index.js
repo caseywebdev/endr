@@ -155,17 +155,17 @@ const { console, queueMicrotask } = globalThis;
  * @param {Props<T>} props
  * @param {Key} [key]
  */
-const jsx = (type, props = /** @type {Props<T>} */ (emptyProps), key) => ({
+export const jsx = (
   type,
-  props,
+  props = /** @type {Props<T>} */ (emptyProps),
   key
-});
+) => ({ type, props, key });
 
-const jsxs = jsx;
+export const jsxs = jsx;
 
-const jsxDEV = jsx;
+export const jsxDEV = jsx;
 
-const jsxsDEV = jsx;
+export const jsxsDEV = jsx;
 
 const emptyProps = /** @type {const} */ ({});
 
@@ -204,13 +204,13 @@ const isArray = value => Array.isArray(value);
 const isObject = value => typeof value === 'object';
 
 /** @param {{ children?: Children }} props */
-const Fragment = props => props.children;
+export const Fragment = props => props.children;
 
 /** @param {{ children?: Children; to: ParentNode }} props */
-const Portal = props => props.children;
+export const Portal = props => props.children;
 
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
-const Try = props => {
+export const Try = props => {
   /** @type {Vnode} */ (currentVnode).catch = props.catch;
   return props.children;
 };
@@ -219,7 +219,7 @@ const Try = props => {
  * @template T
  * @param {T} value
  */
-const createContext = value => {
+export const createContext = value => {
   const Context = Object.assign(
     /** @param {{ value: T; children?: Children }} props */
     ({ value, children }) => {
@@ -350,7 +350,7 @@ let refIndex = 0;
  * @template T
  * @param {T | (() => T)} initial
  */
-const useRef = initial => {
+export const useRef = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   vnode.refs ??= [];
   let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
@@ -365,7 +365,7 @@ const useRef = initial => {
  * @param {AfterEffect} fn
  * @param {unknown[]} [deps]
  */
-const useEffect = (fn, deps) => {
+export const useEffect = (fn, deps) => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   vnode.effects ??= [];
   const effect = vnode.effects[effectIndex++];
@@ -381,7 +381,7 @@ const useEffect = (fn, deps) => {
  * @param {(...args: unknown[]) => T} fn
  * @param {unknown[]} deps
  */
-const useMemo = (fn, deps = emptyDeps) => {
+export const useMemo = (fn, deps = emptyDeps) => {
   const ref = useRef(() => ({ value: fn(), deps }));
   if (depsChanged(ref.current.deps, deps)) {
     ref.current.value = fn();
@@ -394,7 +394,7 @@ const useMemo = (fn, deps = emptyDeps) => {
  * @template T
  * @param {T | (() => T)} initial
  */
-const useState = initial => {
+export const useState = initial => {
   const vnode = /** @type {Vnode} */ (currentVnode);
   /** @type {State<T>} */
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -431,7 +431,7 @@ const depsChanged = (before, after) => {
  * @template {(...args: any[]) => any} T
  * @param {T} fn
  */
-const useCallback = fn => {
+export const useCallback = fn => {
   const ref = useRef(() => fn);
   ref.current = fn;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -457,7 +457,7 @@ const defaultMemo = (prev, next) => {
  * @param {Component} Component
  * @param {typeof defaultMemo} [memo]
  */
-const memo = (Component, memo = defaultMemo) => {
+export const memo = (Component, memo = defaultMemo) => {
   Component.memo = memo;
   return Component;
 };
@@ -466,7 +466,7 @@ const memo = (Component, memo = defaultMemo) => {
  * @template {Context<any>} T
  * @param {T} Context
  */
-const useContext = Context => {
+export const useContext = Context => {
   const vnode = /** @type {Vnode} */ (currentVnode);
 
   const context = vnode.contexts?.get(Context);
@@ -790,7 +790,7 @@ const flush = queues => {
 };
 
 /** @param {ParentNode} parentNode */
-const createRoot = parentNode => {
+export const createRoot = parentNode => {
   /** @type {Queues} */
   const queues = {
     afterEffects: [],
@@ -838,24 +838,4 @@ const createRoot = parentNode => {
       flush(queues);
     }
   });
-};
-
-// eslint-disable-next-line import/no-named-export
-export {
-  createContext,
-  createRoot,
-  Fragment,
-  jsx,
-  jsxDEV,
-  jsxs,
-  jsxsDEV,
-  memo,
-  Portal,
-  Try,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
 };
