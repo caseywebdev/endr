@@ -61,13 +61,13 @@
  *     ? {}
  *     : Parameters<T>[0]
  *   : T extends keyof HTMLElementTagNameMap
- *     ?
- *         | SimpleProps<HTMLElementTagNameMap[T]>
- *         | { [K in `data-${string}`]: string | null | undefined }
+ *     ? SimpleProps<HTMLElementTagNameMap[T]> & {
+ *         [K in `data-${string}`]: string | null | undefined;
+ *       }
  *     : T extends keyof SVGElementTagNameMap
- *       ?
- *           | SimpleProps<SVGElementTagNameMap[T]>
- *           | { [K: string]: string | null | undefined }
+ *       ? SimpleProps<SVGElementTagNameMap[T]> & {
+ *           [K: string]: string | null | undefined;
+ *         }
  *       : UnknownElementProps} Props
  */
 
