@@ -124,6 +124,8 @@ const Tile = memo(({ x, y }) => {
 
 const Context = createContext(0);
 
+const length = 10000;
+
 const Root = () => {
   const [now, setNow] = useState(new Date().getSeconds());
 
@@ -132,10 +134,7 @@ const Root = () => {
   }, []);
 
   const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
-  const { start, end, before, after } = useList({
-    containerRef,
-    length: 10000
-  });
+  const { start, end, before, after } = useList({ containerRef, length });
 
   return (
     <Context value={now}>
@@ -154,22 +153,42 @@ const Root = () => {
           <Tile key={i} x={i % resolution} y={Math.floor(i / resolution)} />
         ))}
       </div>
-      <div
-        ref={containerRef}
-        style={{
-          color: 'white',
-          paddingTop: `${before}px`,
-          paddingBottom: `${after}px`
-        }}
-      >
-        {Array.from({ length: end - start }, (_, i) => (
-          <div
-            key={i + start}
-            style={{ borderTop: '1px solid #222', padding: '1rem' }}
-          >
-            Item {i + start + 1}
-          </div>
-        ))}
+      <div style={{ padding: '1rem' }}>
+        <div
+          style={{ color: '#fff', fontWeight: 'bold', marginBottom: '0.5rem' }}
+        >
+          {length} Items
+        </div>
+        <div
+          ref={containerRef}
+          style={{
+            color: 'white',
+            paddingTop: `${before}px`,
+            paddingBottom: `${after}px`,
+            display: 'grid',
+            gridTemplateColumns: `repeat(auto-fill, minmax(min(200px, 50%), 1fr))`,
+            borderLeft: '10px solid #000',
+            borderBottom: '10px solid #000'
+          }}
+        >
+          {Array.from({ length: end - start }, (_, i) => (
+            <div
+              key={i + start}
+              style={{
+                borderTop: '10px solid #000',
+                borderRight: '10px solid #000',
+                padding: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                aspectRatio: '1',
+                backgroundColor: `rgb(${((start + i) * 13) % 128}, ${((start + i) * 19) % 128}, ${((start + i) * 23) % 128})`
+              }}
+            >
+              Item {i + start + 1}
+            </div>
+          ))}
+        </div>
       </div>
       <button
         onclick={root.unmount}
