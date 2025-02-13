@@ -36,20 +36,15 @@
 /**
  * @template {Element} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
- * @typedef {Partial<{
- *   [K in keyof Shared | keyof T]: K extends keyof Shared
+ * @typedef {{
+ *   [K in keyof Shared | keyof T]?: K extends keyof Shared
  *     ? Shared[K]
  *     : K extends keyof T
- *       ? T[K] extends
- *           | number
- *           | boolean
- *           | ((...args: any[]) => any)
- *           | null
- *           | undefined
+ *       ? T[K] extends number | boolean | ((...args: any[]) => any) | null
  *         ? T[K]
- *         : string | null | undefined
+ *         : string | null
  *       : never;
- * }>} SimpleProps
+ * }} SimpleProps
  */
 
 /** @typedef {SharedElementProps & { [K: string]: unknown }} UnknownElementProps */
@@ -62,11 +57,11 @@
  *     : Parameters<T>[0]
  *   : T extends keyof HTMLElementTagNameMap
  *     ? SimpleProps<HTMLElementTagNameMap[T]> & {
- *         [K in `data-${string}`]: string | null | undefined;
+ *         [K in `data-${string}`]?: string | null;
  *       }
  *     : T extends keyof SVGElementTagNameMap
  *       ? SimpleProps<SVGElementTagNameMap[T]> & {
- *           [K: string]: string | null | undefined;
+ *           [K in string]?: string | null;
  *         }
  *       : UnknownElementProps} Props
  */

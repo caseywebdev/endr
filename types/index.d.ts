@@ -56,13 +56,11 @@ export type SharedElementProps<T = unknown> = {
     ref?: Ref<T | null> | null;
     style?: Partial<CSSStyleDeclaration> | string | null;
 };
-export type SimpleProps<T extends Element, Shared = SharedElementProps<T>> = Partial<{ [K in keyof Shared | keyof T]: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] extends number | boolean | ((...args: any[]) => any) | null | undefined ? T[K] : string | null | undefined : never; }>;
+export type SimpleProps<T extends Element, Shared = SharedElementProps<T>> = { [K in keyof Shared | keyof T]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] extends number | boolean | ((...args: any[]) => any) | null ? T[K] : string | null : never; };
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
 };
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? SimpleProps<HTMLElementTagNameMap[T]> & { [K in `data-${string}`]: string | null | undefined; } : T extends keyof SVGElementTagNameMap ? SimpleProps<SVGElementTagNameMap[T]> & {
-    [K: string]: string | null | undefined;
-} : UnknownElementProps;
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? SimpleProps<HTMLElementTagNameMap[T]> & { [K in `data-${string}`]?: string | null; } : T extends keyof SVGElementTagNameMap ? SimpleProps<SVGElementTagNameMap[T]> & { [K in string]?: string | null; } : UnknownElementProps;
 export type Key = any;
 export type Def = {
     type: Type;
