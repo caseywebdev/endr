@@ -60,7 +60,7 @@ export type SimpleProps<T extends Element, Shared = SharedElementProps<T>> = { [
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
 };
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? SimpleProps<HTMLElementTagNameMap[T]> & { [K in `data-${string}`]?: string | null; } : T extends keyof SVGElementTagNameMap ? SimpleProps<SVGElementTagNameMap[T]> & { [K in string]?: string | null; } : UnknownElementProps;
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? SimpleProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? SimpleProps<SVGElementTagNameMap[T]> | { [K in string]?: string | null; } : UnknownElementProps;
 export type Key = any;
 export type Def = {
     type: Type;
