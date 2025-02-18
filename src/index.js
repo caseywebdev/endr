@@ -34,346 +34,239 @@
  */
 
 /**
- * @typedef {{
- *   [key: `data-${string}`]: string | null | undefined;
- *   'aria-atomic'?: 'true' | 'false' | null;
- *   'aria-autocomplete'?: 'none' | 'inline' | 'list' | 'both' | null;
- *   'aria-busy'?: 'true' | 'false' | null;
- *   'aria-checked'?: 'true' | 'false' | 'mixed' | null;
- *   'aria-colcount'?: string | null;
- *   'aria-colindex'?: string | null;
- *   'aria-colspan'?: string | null;
- *   'aria-controls'?: string | null;
- *   'aria-current'?:
- *     | 'page'
- *     | 'step'
- *     | 'location'
- *     | 'date'
- *     | 'time'
- *     | 'true'
- *     | 'false'
- *     | null;
- *   'aria-describedby'?: string | null;
- *   'aria-details'?: string | null;
- *   'aria-disabled'?: 'true' | 'false' | null;
- *   'aria-errormessage'?: string | null;
- *   'aria-expanded'?: 'true' | 'false' | null;
- *   'aria-haspopup'?:
- *     | 'dialog'
- *     | 'menu'
- *     | 'listbox'
- *     | 'tree'
- *     | 'grid'
- *     | 'true'
- *     | 'false'
- *     | null;
- *   'aria-hidden'?: 'true' | 'false' | null;
- *   'aria-invalid'?: 'true' | 'false' | 'grammar' | 'spelling' | null;
- *   'aria-keyshortcuts'?: string | null;
- *   'aria-label'?: string | null;
- *   'aria-labelledby'?: string | null;
- *   'aria-level'?: string | null;
- *   'aria-live'?: 'off' | 'polite' | 'assertive' | null;
- *   'aria-modal'?: 'true' | 'false' | null;
- *   'aria-multiline'?: 'true' | 'false' | null;
- *   'aria-multiselectable'?: 'true' | 'false' | null;
- *   'aria-orientation'?: 'horizontal' | 'vertical' | null;
- *   'aria-owns'?: string | null;
- *   'aria-placeholder'?: string | null;
- *   'aria-posinset'?: string | null;
- *   'aria-pressed'?: 'true' | 'false' | 'mixed' | null;
- *   'aria-readonly'?: 'true' | 'false' | null;
- *   'aria-relevant'?: string | null;
- *   'aria-required'?: 'true' | 'false' | null;
- *   'aria-roledescription'?: string | null;
- *   'aria-rowcount'?: string | null;
- *   'aria-rowindex'?: string | null;
- *   'aria-rowspan'?: string | null;
- *   'aria-selected'?: 'true' | 'false' | null;
- *   'aria-setsize'?: string | null;
- *   'aria-sort'?: 'none' | 'ascending' | 'descending' | 'other' | null;
- *   'aria-valuemax'?: string | null;
- *   'aria-valuemin'?: string | null;
- *   'aria-valuenow'?: string | null;
- *   'aria-valuetext'?: string | null;
- *   accesskey?: string | null;
- *   autocapitalize?:
- *     | 'off'
- *     | 'none'
- *     | 'on'
- *     | 'sentences'
- *     | 'words'
- *     | 'characters'
- *     | null;
- *   autofocus?: 'true' | null;
+ * @template T
+ * @typedef {Pick<
+ *   T,
+ *   {
+ *     [K in keyof T]: (<U>() => U extends { [L in K]: T[K] } ? 1 : 2) extends <
+ *       U
+ *     >() => U extends { -readonly [L in K]: T[K] } ? 1 : 2
+ *       ? T[K] extends
+ *           | string
+ *           | number
+ *           | boolean
+ *           | ((...args: any[]) => any)
+ *           | null
+ *           | undefined
+ *         ? K
+ *         : never
+ *       : never;
+ *   }[keyof T]
+ * >} SimpleElementProps
+ */
+
+/** @typedef {{ [K in `data-${string}`]?: string | null }} DataAttributes */
+
+/**
+ * @typedef {DataAttributes & {
+ *   accumulate?: 'none' | 'sum' | null;
+ *   additive?: 'replace' | 'sum' | null;
+ *   'alignment-baseline?': string | null;
+ *   amplitude?: string | null;
+ *   attributeName?: string | null;
+ *   azimuth?: string | null;
+ *   baseFrequency?: string | null;
+ *   'baseline-shift'?: string | null;
+ *   begin?: string | null;
+ *   bias?: string | null;
+ *   by?: string | null;
+ *   calcMode?: string | null;
  *   class?: string | null;
- *   contenteditable?: 'true' | 'false' | 'inherit' | null;
- *   dir?: 'ltr' | 'rtl' | 'auto' | null;
- *   draggable?: 'true' | 'false' | null;
- *   enterkeyhint?:
- *     | 'enter'
- *     | 'done'
- *     | 'go'
- *     | 'next'
- *     | 'previous'
- *     | 'search'
- *     | 'send'
- *     | null;
- *   hidden?: 'true' | null;
- *   id?: string | null;
- *   inputmode?: string | null;
- *   is?: string | null;
- *   itemid?: string | null;
- *   itemprop?: string | null;
- *   itemref?: string | null;
- *   itemscope?: 'true' | null;
- *   itemtype?: string | null;
- *   lang?: string | null;
- *   nonce?: string | null;
- *   part?: string | null;
- *   role?: string | null;
- *   spellcheck?: 'true' | 'false' | null;
- *   style?: string | null;
- *   tabindex?: string | null;
- *   title?: string | null;
- *   translate?: 'yes' | 'no' | null;
- * }} GlobalAttributes
- */
-
-/**
- * @typedef {GlobalAttributes & {
- *   'accept-charset'?: string | null;
- *   'http-equiv'?: string | null;
- *   accept?: string | null;
- *   action?: string | null;
- *   allow?: string | null;
- *   alt?: string | null;
- *   async?: 'true' | null;
- *   autocomplete?: 'on' | 'off' | string | null;
- *   autofocus?: 'true' | null;
- *   autoplay?: 'true' | null;
- *   capture?: 'true' | null;
- *   charset?: 'utf-8' | string | null;
- *   checked?: 'true' | null;
- *   cite?: string | null;
- *   cols?: string | null;
- *   colspan?: string | null;
- *   content?: string | null;
- *   controls?: 'true' | null;
- *   coords?: string | null;
- *   crossorigin?: 'anonymous' | 'use-credentials' | '' | null;
- *   datetime?: string | null;
- *   decoding?: 'auto' | 'sync' | 'async' | null;
- *   default?: 'true' | null;
- *   defer?: 'true' | null;
- *   disabled?: 'true' | null;
- *   download?: 'true' | string | null;
- *   enctype?:
- *     | 'application/x-www-form-urlencoded'
- *     | 'multipart/form-data'
- *     | 'text/plain'
- *     | null;
- *   fetchpriority?: 'auto' | 'high' | 'low' | null;
- *   for?: string | null;
- *   form?: string | null;
- *   formaction?: string | null;
- *   formenctype?:
- *     | 'application/x-www-form-urlencoded'
- *     | 'multipart/form-data'
- *     | 'text/plain'
- *     | null;
- *   formmethod?: 'get' | 'post' | 'dialog' | null;
- *   formnovalidate?: 'true' | null;
- *   formtarget?: '_self' | '_blank' | '_parent' | '_top' | string | null;
- *   headers?: string | null;
- *   height?: string | null;
- *   high?: string | null;
- *   href?: string | null;
- *   hreflang?: string | null;
- *   integrity?: string | null;
- *   ismap?: 'true' | null;
- *   kind?:
- *     | 'captions'
- *     | 'chapters'
- *     | 'descriptions'
- *     | 'metadata'
- *     | 'subtitles'
- *     | string
- *     | null;
- *   label?: string | null;
- *   list?: string | null;
- *   loading?: 'lazy' | 'eager' | 'auto' | null;
- *   loop?: 'true' | null;
- *   low?: string | null;
- *   max?: string | null;
- *   maxlength?: string | null;
- *   media?: string | null;
- *   method?: 'get' | 'post' | 'dialog' | string | null;
- *   min?: string | null;
- *   minlength?: string | null;
- *   multiple?: 'true' | null;
- *   muted?: 'true' | null;
- *   name?: string | null;
- *   nomodule?: 'true' | null;
- *   nonce?: string | null;
- *   novalidate?: 'true' | null;
- *   open?: 'true' | null;
- *   optimum?: string | null;
- *   pattern?: string | null;
- *   placeholder?: string | null;
- *   playsinline?: 'true' | null;
- *   poster?: string | null;
- *   preload?: 'none' | 'metadata' | 'auto' | '' | null;
- *   readonly?: 'true' | null;
- *   referrerpolicy?:
- *     | 'no-referrer'
- *     | 'no-referrer-when-downgrade'
- *     | 'origin'
- *     | 'origin-when-cross-origin'
- *     | 'same-origin'
- *     | 'strict-origin'
- *     | 'strict-origin-when-cross-origin'
- *     | 'unsafe-url'
- *     | null;
- *   rel?:
- *     | 'alternate'
- *     | 'author'
- *     | 'bookmark'
- *     | 'canonical'
- *     | 'dns-prefetch'
- *     | 'external'
- *     | 'help'
- *     | 'icon'
- *     | 'license'
- *     | 'manifest'
- *     | 'modulepreload'
- *     | 'next'
- *     | 'nofollow'
- *     | 'noopener'
- *     | 'noreferrer'
- *     | 'opensearch'
- *     | 'pingback'
- *     | 'preconnect'
- *     | 'prefetch'
- *     | 'preload'
- *     | 'prerender'
- *     | 'prev'
- *     | 'search'
- *     | 'shortlink'
- *     | 'stylesheet'
- *     | 'tag'
- *     | string
- *     | null;
- *   required?: 'true' | null;
- *   reversed?: 'true' | null;
- *   rows?: string | null;
- *   rowspan?: string | null;
- *   sandbox?:
- *     | 'allow-downloads'
- *     | 'allow-forms'
- *     | 'allow-modals'
- *     | 'allow-orientation-lock'
- *     | 'allow-pointer-lock'
- *     | 'allow-popups'
- *     | 'allow-popups-to-escape-sandbox'
- *     | 'allow-presentation'
- *     | 'allow-same-origin'
- *     | 'allow-scripts'
- *     | 'allow-top-navigation'
- *     | string
- *     | null;
- *   scope?: 'col' | 'colgroup' | 'row' | 'rowgroup' | null;
- *   selected?: 'true' | null;
- *   shape?: 'rect' | 'circle' | 'poly' | 'default' | null;
- *   size?: string | null;
- *   sizes?: string | null;
- *   slot?: string | null;
- *   span?: string | null;
- *   src?: string | null;
- *   srcdoc?: string | null;
- *   srclang?: string | null;
- *   srcset?: string | null;
- *   start?: string | null;
- *   step?: string | null;
- *   target?: '_self' | '_blank' | '_parent' | '_top' | string | null;
- *   type?: string | null;
- *   usemap?: string | null;
- *   value?: string | null;
- *   width?: string | null;
- *   wrap?: 'hard' | 'soft' | null;
- * }} HTMLAttributes
- */
-
-/**
- * @typedef {GlobalAttributes & {
- *   'alignment-baseline'?: string | null;
+ *   clipPathUnits?: string | null;
  *   'clip-path'?: string | null;
- *   'fill-opacity'?: string | null;
- *   'fill-rule'?: 'nonzero' | 'evenodd' | null;
- *   'flood-color'?: string | null;
- *   'flood-opacity'?: string | null;
- *   'font-family'?: string | null;
- *   'font-size'?: string | null;
- *   'font-weight'?: string | null;
- *   'marker-end'?: string | null;
- *   'marker-mid'?: string | null;
- *   'marker-start'?: string | null;
- *   'pointer-events'?: string | null;
- *   'stop-color'?: string | null;
- *   'stop-opacity'?: string | null;
- *   'stroke-dasharray'?: string | null;
- *   'stroke-dashoffset'?: string | null;
- *   'stroke-linecap'?: 'butt' | 'round' | 'square' | null;
- *   'stroke-linejoin'?: 'miter' | 'round' | 'bevel' | null;
- *   'stroke-miterlimit'?: string | null;
- *   'stroke-opacity'?: string | null;
- *   'stroke-width'?: string | null;
- *   'xlink:href'?: string | null;
- *   clip?: string | null;
+ *   'clip-rule'?: string | null;
  *   color?: string | null;
+ *   'color-interpolation'?: 'auto' | 'sRGB' | 'linearRGB' | 'inherit' | null;
+ *   'color-interpolation-filters'?: string | null;
+ *   crossorigin?: string | null;
  *   cursor?: string | null;
  *   cx?: string | null;
  *   cy?: string | null;
  *   d?: string | null;
+ *   decoding?: string | null;
+ *   diffuseConstant?: string | null;
+ *   direction?: string | null;
  *   display?: string | null;
+ *   divisor?: string | null;
+ *   'dominant-baseline'?: string | null;
+ *   dur?: string | null;
+ *   dx?: string | null;
+ *   dy?: string | null;
+ *   edgeMode?: string | null;
+ *   elevation?: string | null;
+ *   end?: string | null;
+ *   exponent?: string | null;
  *   fill?: string | null;
+ *   'fill-opacity'?: string | null;
+ *   'fill-rule'?: 'nonzero' | 'evenodd' | 'inherit' | null;
  *   filter?: string | null;
- *   font?: string | null;
+ *   filterUnits?: string | null;
+ *   'flood-color'?: string | null;
+ *   'flood-opacity'?: string | null;
+ *   'font-family'?: string | null;
+ *   'font-size'?: string | null;
+ *   'font-size-adjust'?: string | null;
+ *   'font-stretch'?: string | null;
+ *   'font-style'?: string | null;
+ *   'font-variant'?: string | null;
+ *   'font-weight'?: string | null;
+ *   fr?: string | null;
+ *   from?: string | null;
  *   fx?: string | null;
  *   fy?: string | null;
  *   gradientTransform?: string | null;
  *   gradientUnits?: string | null;
  *   height?: string | null;
  *   href?: string | null;
+ *   hreflang?: string | null;
+ *   id?: string | null;
+ *   'image-rendering'?: string | null;
+ *   in?: string | null;
+ *   in2?: string | null;
+ *   intercept?: string | null;
+ *   k1?: string | null;
+ *   k2?: string | null;
+ *   k3?: string | null;
+ *   k4?: string | null;
+ *   kernelMatrix?: string | null;
+ *   kernelUnitLength?: string | null;
+ *   keyPoints?: string | null;
+ *   keySplines?: string | null;
+ *   keyTimes?: string | null;
+ *   lang?: string | null;
+ *   lengthAdjust?: string | null;
+ *   'letter-spacing'?: string | null;
+ *   'lighting-color'?: string | null;
+ *   limitingConeAngle?: string | null;
+ *   local?: string | null;
+ *   'marker-end'?: string | null;
+ *   'marker-mid'?: string | null;
+ *   'marker-start'?: string | null;
+ *   markerHeight?: string | null;
+ *   markerUnits?: string | null;
+ *   markerWidth?: string | null;
  *   mask?: string | null;
+ *   maskContentUnits?: string | null;
+ *   maskUnits?: string | null;
+ *   max?: string | null;
+ *   media?: string | null;
+ *   method?: string | null;
+ *   min?: string | null;
+ *   mode?: string | null;
+ *   numOctaves?: string | null;
  *   offset?: string | null;
  *   opacity?: string | null;
+ *   operator?: string | null;
+ *   order?: string | null;
+ *   orient?: string | null;
+ *   origin?: string | null;
  *   overflow?: string | null;
+ *   'overline-position'?: string | null;
+ *   'overline-thickness'?: string | null;
+ *   'paint-order'?: string | null;
+ *   path?: string | null;
+ *   pathLength?: string | null;
+ *   patternContentUnits?: string | null;
+ *   patternTransform?: string | null;
  *   patternUnits?: string | null;
+ *   ping?: string | null;
+ *   'pointer-events'?: string | null;
+ *   points?: string | null;
+ *   pointsAtX?: string | null;
+ *   pointsAtY?: string | null;
+ *   pointsAtZ?: string | null;
+ *   preserveAlpha?: string | null;
  *   preserveAspectRatio?: string | null;
+ *   primitiveUnits?: string | null;
  *   r?: string | null;
+ *   radius?: string | null;
+ *   referrerPolicy?: string | null;
+ *   refX?: string | null;
+ *   refY?: string | null;
+ *   rel?: string | null;
+ *   'rendering-intent'?: string | null;
+ *   repeatCount?: string | null;
+ *   repeatDur?: string | null;
+ *   requiredExtensions?: string | null;
+ *   restart?: string | null;
+ *   result?: string | null;
+ *   rotate?: string | null;
  *   rx?: string | null;
  *   ry?: string | null;
+ *   scale?: string | null;
+ *   seed?: string | null;
+ *   'shape-rendering'?:
+ *     | 'auto'
+ *     | 'optimizeSpeed'
+ *     | 'crispEdges'
+ *     | 'geometricPrecision'
+ *     | null;
+ *   side?: string | null;
+ *   slope?: string | null;
+ *   spacing?: string | null;
+ *   specularConstant?: string | null;
+ *   specularExponent?: string | null;
+ *   speed?: string | null;
+ *   spreadMethod?: 'pad' | 'reflect' | 'repeat' | null;
+ *   startOffset?: string | null;
+ *   stdDeviation?: string | null;
+ *   stitchTiles?: string | null;
+ *   'stop-color'?: string | null;
+ *   'stop-opacity'?: string | null;
+ *   'strikethrough-position'?: string | null;
+ *   'strikethrough-thickness'?: string | null;
  *   stroke?: string | null;
- *   textAnchor?: 'start' | 'middle' | 'end' | 'inherit' | null;
+ *   'stroke-dasharray'?: string | null;
+ *   'stroke-dashoffset'?: string | null;
+ *   'stroke-linecap'?: 'butt' | 'round' | 'square' | 'inherit' | null;
+ *   'stroke-linejoin'?: 'miter' | 'round' | 'bevel' | 'inherit' | null;
+ *   'stroke-miterlimit'?: string | null;
+ *   'stroke-opacity'?: string | null;
+ *   'stroke-width'?: string | null;
+ *   style?: string | null;
+ *   surfaceScale?: string | null;
+ *   systemLanguage?: string | null;
+ *   tabindex?: string | null;
+ *   tableValues?: string | null;
+ *   target?: string | null;
+ *   targetX?: string | null;
+ *   targetY?: string | null;
+ *   'text-anchor'?: string | null;
+ *   'text-decoration'?: string | null;
+ *   'text-rendering'?: string | null;
+ *   textLength?: string | null;
+ *   to?: string | null;
  *   transform?: string | null;
+ *   'transform-origin'?: string | null;
+ *   type?: string | null;
+ *   'underline-position'?: string | null;
+ *   'underline-thickness'?: string | null;
+ *   'unicode-bidi'?: string | null;
+ *   values?: string | null;
+ *   'vector-effect'?: string | null;
  *   viewBox?: string | null;
  *   visibility?: string | null;
  *   width?: string | null;
+ *   widths?: string | null;
+ *   'word-spacing'?: string | null;
+ *   'writing-mode'?: string | null;
  *   x?: string | null;
  *   x1?: string | null;
  *   x2?: string | null;
- *   xmlns?: 'http://www.w3.org/2000/svg' | string | null;
+ *   xChannelSelector?: string | null;
+ *   xmlns?: string | null;
  *   y?: string | null;
  *   y1?: string | null;
  *   y2?: string | null;
+ *   yChannelSelector?: string | null;
+ *   z?: string | null;
  * }} SVGAttributes
  */
 
 /**
  * @template {Element} T
  * @typedef {T extends HTMLElement
- *   ? HTMLAttributes
+ *   ? DataAttributes
  *   : T extends SVGElement
  *     ? SVGAttributes
  *     : never} ElementAttributes
@@ -382,14 +275,16 @@
 /**
  * @template {Element} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @template [Simple=SimpleElementProps<T>] Default is `SimpleElementProps<T>`
  * @template [Attributes=ElementAttributes<T>] Default is `ElementAttributes<T>`
  * @typedef {{
- *   [K in keyof Shared | keyof T | keyof Attributes]?: K extends keyof Shared
+ *   [K in
+ *     | keyof Shared
+ *     | keyof Simple
+ *     | keyof Attributes]?: K extends keyof Shared
  *     ? Shared[K]
- *     : K extends keyof T
- *       ? T[K] extends number | boolean | ((...args: any[]) => any) | null
- *         ? T[K]
- *         : string | null
+ *     : K extends keyof Simple
+ *       ? Simple[K] | null
  *       : K extends keyof Attributes
  *         ? Attributes[K]
  *         : never;
