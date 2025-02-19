@@ -255,7 +255,7 @@ export type SVGAttributes = DataAttributes & {
     z?: string | null;
 };
 export type ElementAttributes<T extends Element> = T extends SVGElement ? SVGAttributes : DataAttributes;
-export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attributes = ElementAttributes<T>> = { [K in keyof Shared | keyof T | keyof Attributes]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] extends string | number | boolean | ((...args: any[]) => any) | null | undefined ? T[K] | null : K extends keyof Attributes ? Attributes[K] : never : K extends keyof Attributes ? Attributes[K] : never; };
+export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attributes = ElementAttributes<T>> = { [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared ? K : K extends keyof T ? T[K] extends string | number | boolean | ((...args: any[]) => any) | null | undefined ? K : never : K]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] | null : K extends keyof Attributes ? Attributes[K] : never; };
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
 };

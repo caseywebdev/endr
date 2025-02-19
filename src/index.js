@@ -250,8 +250,8 @@
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @template [Attributes=ElementAttributes<T>] Default is `ElementAttributes<T>`
  * @typedef {{
- *   [K in keyof Shared | keyof T | keyof Attributes]?: K extends keyof Shared
- *     ? Shared[K]
+ *   [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared
+ *     ? K
  *     : K extends keyof T
  *       ? T[K] extends
  *           | string
@@ -260,10 +260,12 @@
  *           | ((...args: any[]) => any)
  *           | null
  *           | undefined
- *         ? T[K] | null
- *         : K extends keyof Attributes
- *           ? Attributes[K]
- *           : never
+ *         ? K
+ *         : never
+ *       : K]?: K extends keyof Shared
+ *     ? Shared[K]
+ *     : K extends keyof T
+ *       ? T[K] | null
  *       : K extends keyof Attributes
  *         ? Attributes[K]
  *         : never;
