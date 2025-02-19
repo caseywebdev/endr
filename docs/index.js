@@ -160,7 +160,7 @@ const Root = () => {
           {length} Items
         </div>
         <div
-          dataset={{ listContainer: 'true' }}
+          data-list-container='true'
           ref={containerRef}
           style={{
             color: 'white',

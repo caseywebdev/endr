@@ -28,30 +28,45 @@
  * @template [T=unknown] Default is `unknown`
  * @typedef {{
  *   children?: Children;
- *   dataset?: { [K in string]?: string | null };
  *   ref?: Ref<T | null> | null;
  *   style?: Partial<CSSStyleDeclaration> | string | null;
  * }} SharedElementProps
  */
 
+/** @typedef {{ [K in `data-${string}`]?: string | null }} DataAttributes */
+
 /**
- * @typedef {{
+ * @typedef {DataAttributes & {
  *   accumulate?: 'none' | 'sum' | null;
+ *   additive?: 'replace' | 'sum' | null;
+ *   'alignment-baseline?': string | null;
  *   amplitude?: string | null;
  *   attributeName?: string | null;
  *   azimuth?: string | null;
  *   baseFrequency?: string | null;
+ *   'baseline-shift'?: string | null;
  *   begin?: string | null;
  *   bias?: string | null;
  *   by?: string | null;
  *   calcMode?: string | null;
  *   class?: string | null;
  *   clipPathUnits?: string | null;
+ *   'clip-path'?: string | null;
+ *   'clip-rule'?: string | null;
+ *   color?: string | null;
+ *   'color-interpolation'?: 'auto' | 'sRGB' | 'linearRGB' | 'inherit' | null;
+ *   'color-interpolation-filters'?: string | null;
  *   crossorigin?: string | null;
+ *   cursor?: string | null;
+ *   cx?: string | null;
+ *   cy?: string | null;
  *   d?: string | null;
  *   decoding?: string | null;
  *   diffuseConstant?: string | null;
+ *   direction?: string | null;
+ *   display?: string | null;
  *   divisor?: string | null;
+ *   'dominant-baseline'?: string | null;
  *   dur?: string | null;
  *   dx?: string | null;
  *   dy?: string | null;
@@ -59,17 +74,31 @@
  *   elevation?: string | null;
  *   end?: string | null;
  *   exponent?: string | null;
+ *   fill?: string | null;
+ *   'fill-opacity'?: string | null;
+ *   'fill-rule'?: 'nonzero' | 'evenodd' | 'inherit' | null;
  *   filter?: string | null;
  *   filterUnits?: string | null;
+ *   'flood-color'?: string | null;
+ *   'flood-opacity'?: string | null;
+ *   'font-family'?: string | null;
+ *   'font-size'?: string | null;
+ *   'font-size-adjust'?: string | null;
+ *   'font-stretch'?: string | null;
+ *   'font-style'?: string | null;
+ *   'font-variant'?: string | null;
+ *   'font-weight'?: string | null;
  *   fr?: string | null;
  *   from?: string | null;
  *   fx?: string | null;
  *   fy?: string | null;
  *   gradientTransform?: string | null;
  *   gradientUnits?: string | null;
+ *   height?: string | null;
  *   href?: string | null;
  *   hreflang?: string | null;
  *   id?: string | null;
+ *   'image-rendering'?: string | null;
  *   in?: string | null;
  *   in2?: string | null;
  *   intercept?: string | null;
@@ -84,28 +113,42 @@
  *   keyTimes?: string | null;
  *   lang?: string | null;
  *   lengthAdjust?: string | null;
+ *   'letter-spacing'?: string | null;
+ *   'lighting-color'?: string | null;
  *   limitingConeAngle?: string | null;
  *   local?: string | null;
+ *   'marker-end'?: string | null;
+ *   'marker-mid'?: string | null;
+ *   'marker-start'?: string | null;
  *   markerHeight?: string | null;
  *   markerUnits?: string | null;
  *   markerWidth?: string | null;
+ *   mask?: string | null;
  *   maskContentUnits?: string | null;
  *   maskUnits?: string | null;
+ *   max?: string | null;
  *   media?: string | null;
  *   method?: string | null;
+ *   min?: string | null;
  *   mode?: string | null;
  *   numOctaves?: string | null;
+ *   offset?: string | null;
+ *   opacity?: string | null;
  *   operator?: string | null;
+ *   order?: string | null;
  *   orient?: string | null;
  *   origin?: string | null;
+ *   overflow?: string | null;
  *   'overline-position'?: string | null;
  *   'overline-thickness'?: string | null;
+ *   'paint-order'?: string | null;
  *   path?: string | null;
  *   pathLength?: string | null;
  *   patternContentUnits?: string | null;
  *   patternTransform?: string | null;
  *   patternUnits?: string | null;
  *   ping?: string | null;
+ *   'pointer-events'?: string | null;
  *   points?: string | null;
  *   pointsAtX?: string | null;
  *   pointsAtY?: string | null;
@@ -113,6 +156,7 @@
  *   preserveAlpha?: string | null;
  *   preserveAspectRatio?: string | null;
  *   primitiveUnits?: string | null;
+ *   r?: string | null;
  *   radius?: string | null;
  *   referrerPolicy?: string | null;
  *   refX?: string | null;
@@ -124,6 +168,10 @@
  *   requiredExtensions?: string | null;
  *   restart?: string | null;
  *   result?: string | null;
+ *   rotate?: string | null;
+ *   rx?: string | null;
+ *   ry?: string | null;
+ *   scale?: string | null;
  *   seed?: string | null;
  *   'shape-rendering'?:
  *     | 'auto'
@@ -141,8 +189,18 @@
  *   startOffset?: string | null;
  *   stdDeviation?: string | null;
  *   stitchTiles?: string | null;
+ *   'stop-color'?: string | null;
+ *   'stop-opacity'?: string | null;
  *   'strikethrough-position'?: string | null;
  *   'strikethrough-thickness'?: string | null;
+ *   stroke?: string | null;
+ *   'stroke-dasharray'?: string | null;
+ *   'stroke-dashoffset'?: string | null;
+ *   'stroke-linecap'?: 'butt' | 'round' | 'square' | 'inherit' | null;
+ *   'stroke-linejoin'?: 'miter' | 'round' | 'bevel' | 'inherit' | null;
+ *   'stroke-miterlimit'?: string | null;
+ *   'stroke-opacity'?: string | null;
+ *   'stroke-width'?: string | null;
  *   style?: string | null;
  *   surfaceScale?: string | null;
  *   systemLanguage?: string | null;
@@ -151,25 +209,40 @@
  *   target?: string | null;
  *   targetX?: string | null;
  *   targetY?: string | null;
+ *   'text-anchor'?: string | null;
+ *   'text-decoration'?: string | null;
+ *   'text-rendering'?: string | null;
  *   textLength?: string | null;
  *   to?: string | null;
+ *   transform?: string | null;
+ *   'transform-origin'?: string | null;
  *   type?: string | null;
  *   'underline-position'?: string | null;
  *   'underline-thickness'?: string | null;
+ *   'unicode-bidi'?: string | null;
  *   values?: string | null;
+ *   'vector-effect'?: string | null;
  *   viewBox?: string | null;
+ *   visibility?: string | null;
+ *   width?: string | null;
+ *   'word-spacing'?: string | null;
+ *   'writing-mode'?: string | null;
+ *   x?: string | null;
  *   x1?: string | null;
  *   x2?: string | null;
  *   xChannelSelector?: string | null;
+ *   xmlns?: string | null;
+ *   y?: string | null;
  *   y1?: string | null;
  *   y2?: string | null;
  *   yChannelSelector?: string | null;
+ *   z?: string | null;
  * }} SVGAttributes
  */
 
 /**
  * @template {Element} T
- * @typedef {T extends SVGElement ? SVGAttributes : {}} ElementAttributes
+ * @typedef {T extends SVGElement ? SVGAttributes : DataAttributes} ElementAttributes
  */
 
 /**
@@ -444,11 +517,6 @@ const updateNode = (node, prev, next) => {
 
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
-    } else if (key === 'dataset') {
-      const obj = isObject(prev[key]) ? prev[key] : {};
-      for (const key in obj) {
-        delete (/** @type {HTMLElement | SVGElement} */ (node).dataset[key]);
-      }
       // @ts-ignore
     } else if (isSimpleProperty(node, key)) node[key] = '';
     else node.removeAttribute(key);
@@ -460,16 +528,6 @@ const updateNode = (node, prev, next) => {
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
       if (next.ref) next.ref.current = node;
-    } else if (key === 'dataset') {
-      const obj = /** @type {Props<T>['dataset']} */ (
-        isObject(next[key]) ? next[key] : {}
-      );
-      for (const key in obj) {
-        if (obj[key] != null) {
-          /** @type {HTMLElement | SVGElement} */ (node).dataset[key] =
-            obj[key];
-        }
-      }
     } else if (key === 'style' && isObject(next[key])) {
       const { style } = /** @type {HTMLElement | SVGElement} */ (node);
       const prevStyle = /** @type {Partial<CSSStyleDeclaration>} */ (
