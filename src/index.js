@@ -791,6 +791,17 @@ const update = vnode => {
   const { depth, queues } = vnode;
   const { afterEffects, inserts, moves, nodeUpdates } = queues;
 
+  let child = vnode.child;
+  const prevChildren = child && /** @type {Map<any, Vnode>} */ (new Map());
+  for (; child; child = child.sibling) {
+    /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).set(
+      child.key ?? child.index,
+      child
+    );
+  }
+  const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
+  const defs = getDefs(vnode);
+
   if (vnode.effects) {
     try {
       for (let i = 0; i < vnode.effects.length; ++i) {
@@ -805,16 +816,6 @@ const update = vnode => {
     }
   }
 
-  let child = vnode.child;
-  const prevChildren = child && /** @type {Map<any, Vnode>} */ (new Map());
-  for (; child; child = child.sibling) {
-    /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).set(
-      child.key ?? child.index,
-      child
-    );
-  }
-  const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
-  const defs = getDefs(vnode);
   vnode.state = 0;
   vnode.child = null;
   let prevNode = vnode.node ? null : vnode.prevNode;
@@ -910,7 +911,7 @@ const update = vnode => {
 const remove = (vnode, removeNode = true) => {
   vnode.state = 3;
 
-  let { effects, child, node } = vnode;
+  let { effects, child, props, node } = vnode;
 
   if (effects) {
     try {
@@ -932,7 +933,10 @@ const remove = (vnode, removeNode = true) => {
     remove(child, removeChildNode || child.type === Portal);
   }
 
-  if (removeNode && node) vnode.queues.removes.unshift(node);
+  if (node) {
+    if (props.ref) props.ref.current = null;
+    if (removeNode) vnode.queues.removes.unshift(node);
+  }
 };
 
 /** @param {Queues} queues */

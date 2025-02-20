@@ -27,7 +27,7 @@ const Flaky = ({ children }) => {
   useEffect(() => {
     if (Math.random() < 0.005) throw new Error('blue');
     return () => {
-      if (Math.random() < 0.5) throw new Error('yellow');
+      if (Math.random() < 0.005) throw new Error('yellow');
     };
   });
 
