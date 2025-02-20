@@ -371,11 +371,7 @@ const { console, queueMicrotask } = globalThis;
  * @param {Props<T>} props
  * @param {Key} [key]
  */
-export const jsx = (
-  type,
-  props = /** @type {Props<T>} */ (emptyProps),
-  key
-) => ({ type, props, key });
+export const jsx = (type, props, key) => ({ type, props, key });
 
 export const jsxs = jsx;
 

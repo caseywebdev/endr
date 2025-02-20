@@ -42,85 +42,108 @@ const Portaled = memo(() => (
   </div>
 ));
 
-/** @param {{ x: number; y: number }} props */
-const Tile = memo(({ x, y }) => {
-  const now = useContext(Context);
+const Tile = memo(
+  /** @param {{ x: number; y: number }} props */
+  ({ x, y }) => {
+    const now = useContext(Context);
 
-  const activeColor = useMemo(
-    () =>
-      `rgb(${128 + ((x - y) / resolution) * 128}, ${128 + ((y - x) / resolution) * 128}, ${
-        ((x + y) / resolution / 2) * 256
-      })`
-  );
-  const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
-  const [color, setColor] = useState('black');
+    const activeColor = useMemo(
+      () =>
+        `rgb(${128 + ((x - y) / resolution) * 128}, ${128 + ((y - x) / resolution) * 128}, ${
+          ((x + y) / resolution / 2) * 256
+        })`
+    );
+    const timeoutRef = useRef(/** @type {number | undefined} */ (undefined));
+    const [color, setColor] = useState('black');
 
-  const activate = useCallback(() => {
-    setColor(activeColor);
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setColor('black'), 5000);
-  });
+    const activate = useCallback(() => {
+      setColor(activeColor);
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+    });
 
-  const selectLength = 1 + Math.floor(Math.random() * 10);
+    const selectLength = 1 + Math.floor(Math.random() * 10);
 
-  return (
-    <Try
-      catch={
-        /** @param {Error} er */ er => {
-          setColor(er.message);
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+    return (
+      <Try
+        catch={
+          /** @param {Error} er */ er => {
+            setColor(er.message);
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+          }
         }
-      }
-    >
-      <div
-        onpointerdown={activate}
-        onpointermove={activate}
-        style={{
-          alignItems: 'center',
-          backgroundColor: color,
-          borderRadius: '0.25rem',
-          display: 'flex',
-          fontSize: '0.75rem',
-          flexDirection: 'column',
-          gap: '0.25rem',
-          justifyContent: 'center',
-          minWidth: '0',
-          overflow: 'hidden',
-          padding: '0.25rem',
-          textAlign: 'center',
-          transition: color === 'black' ? 'all 5s' : ''
-        }}
       >
-        <select
-          value={(Math.floor(Math.random() * selectLength) + 1).toString()}
+        <div
+          onpointerdown={activate}
+          onpointermove={activate}
+          style={{
+            alignItems: 'center',
+            backgroundColor: color,
+            borderRadius: '0.25rem',
+            display: 'flex',
+            fontSize: '0.75rem',
+            flexDirection: 'column',
+            gap: '0.25rem',
+            justifyContent: 'center',
+            minWidth: '0',
+            overflow: 'hidden',
+            padding: '0.25rem',
+            textAlign: 'center',
+            transition: color === 'black' ? 'all 5s' : ''
+          }}
         >
-          {Array.from({ length: selectLength }, (_, i) => (
-            <option key={i} value={(i + 1).toString()}>
-              {i + 1}
-            </option>
-          ))}
-        </select>
-        {color === 'red' ? (
-          'Fake Render Error'
-        ) : color === 'blue' ? (
-          'Fake After Effect Error'
-        ) : color === 'yellow' ? (
-          'Fake Before Effect Error'
-        ) : (
-          <Flaky>{now}</Flaky>
-        )}
-        {x === 0 && y === 0 && !!(now % 5) && (
-          <Portal
-            to={/** @type {Element} */ (document.getElementById('portal'))}
+          <select
+            value={(Math.floor(Math.random() * selectLength) + 1).toString()}
           >
-            <Portaled />
-          </Portal>
-        )}
-      </div>
-    </Try>
-  );
-});
+            {Array.from({ length: selectLength }, (_, i) => (
+              <option key={i} value={(i + 1).toString()}>
+                {i + 1}
+              </option>
+            ))}
+          </select>
+          {color === 'red' ? (
+            'Fake Render Error'
+          ) : color === 'blue' ? (
+            'Fake After Effect Error'
+          ) : color === 'yellow' ? (
+            'Fake Before Effect Error'
+          ) : (
+            <Flaky>{now}</Flaky>
+          )}
+          {x === 0 && y === 0 && !!(now % 5) && (
+            <Portal
+              to={/** @type {Element} */ (document.getElementById('portal'))}
+            >
+              <Portaled />
+            </Portal>
+          )}
+        </div>
+      </Try>
+    );
+  }
+);
+
+const ListItem = memo(
+  /** @param {{ index: number }} props */
+  ({ index }) => (
+    <div
+      key={index}
+      style={{
+        borderTop: '10px solid #000',
+        borderRight: '10px solid #000',
+        padding: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        aspectRatio: '1',
+        backgroundColor: `rgb(${(index * 13) % 128}, ${(index * 19) % 128}, ${(index * 23) % 128})`
+      }}
+    >
+      Item {index + 1}
+    </div>
+  )
+);
 
 const Context = createContext(0);
 
@@ -173,21 +196,7 @@ const Root = () => {
           }}
         >
           {Array.from({ length: end - start }, (_, i) => (
-            <div
-              key={i + start}
-              style={{
-                borderTop: '10px solid #000',
-                borderRight: '10px solid #000',
-                padding: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                aspectRatio: '1',
-                backgroundColor: `rgb(${((start + i) * 13) % 128}, ${((start + i) * 19) % 128}, ${((start + i) * 23) % 128})`
-              }}
-            >
-              Item {i + start + 1}
-            </div>
+            <ListItem key={start + i} index={start + i} />
           ))}
         </div>
       </div>

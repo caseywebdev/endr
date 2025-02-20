@@ -1,19 +1,19 @@
-export function jsx<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+export function jsx<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
     key: any;
 };
-export function jsxs<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+export function jsxs<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
     key: any;
 };
-export function jsxDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+export function jsxDEV<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
     key: any;
 };
-export function jsxsDEV<T extends Type>(type: T, props?: Props<T>, key?: Key): {
+export function jsxsDEV<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
     key: any;
