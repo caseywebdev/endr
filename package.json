@@ -1,7 +1,7 @@
 {
   "name": "endr",
   "type": "module",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "repository": {
@@ -27,5 +27,9 @@
     "eslint": "9",
     "eslint-config-coderiety": "2",
     "typescript": "5"
-  }
+  },
+  "files": [
+    "/src",
+    "/types"
+  ]
 }

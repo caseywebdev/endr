@@ -255,7 +255,7 @@ export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attr
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
 };
-export type Props<T = unknown> = T extends Component ? Parameters<T>[0] extends undefined ? Record<never, never> : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? ElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? ElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
+export type Props<T = unknown> = T extends Component ? Parameters<T>[0] extends undefined ? Record<keyof any, never> : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? ElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? ElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
 export type Key = unknown;
 export type Def = {
     type: Type;

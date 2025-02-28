@@ -6,13 +6,16 @@ node_modules/.bin/tsc \
   --allowJs \
   --checkJs \
   --declaration \
-  --declarationDir types \
   --emitDeclarationOnly \
+  --module NodeNext \
+  --moduleResolution NodeNext \
+  --outDir types \
+  --rootDir src \
   --strict \
   --target ESNext \
   src/index.js
 
-node_modules/.bin/eslint
+node_modules/.bin/eslint --fix
 
 node_modules/.bin/tsc
 

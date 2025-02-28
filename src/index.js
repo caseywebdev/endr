@@ -280,7 +280,7 @@
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends Component
  *   ? Parameters<T>[0] extends undefined
- *     ? Record<never, never>
+ *     ? Record<keyof any, never>
  *     : Parameters<T>[0]
  *   : T extends keyof HTMLElementTagNameMap
  *     ? ElementProps<HTMLElementTagNameMap[T]>
