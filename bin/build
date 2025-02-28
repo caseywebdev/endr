@@ -1,0 +1,26 @@
+#!/bin/sh -e
+
+#!/bin/sh -e
+
+node_modules/.bin/eslint
+
+node_modules/.bin/tsc
+
+node_modules/.bin/tsc \
+  --allowJs \
+  --checkJs \
+  --declaration \
+  --declarationDir types \
+  --emitDeclarationOnly \
+  --strict \
+  --target ESNext \
+  src/index.js
+
+exec node_modules/.bin/esbuild $1 \
+  --bundle \
+  --jsx-import-source=endr \
+  --jsx=automatic \
+  --loader:.js=jsx \
+  --minify \
+  --outfile=docs/dist.js \
+  docs/index.js

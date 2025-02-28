@@ -1,8 +1,6 @@
 #!/bin/sh -e
 
-node_modules/.bin/eslint src/index.js
-
-bin/tsc
+bin/build
 
 bumpit
 

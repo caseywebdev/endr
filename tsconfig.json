@@ -2,10 +2,15 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "strict": true,
-    "target": "ESNext",
     "jsx": "preserve",
     "jsxImportSource": "endr",
-    "module": "NodeNext"
-  }
+    "module": "NodeNext",
+    "noEmit": true,
+    "strict": true,
+    "target": "ESNext"
+  },
+  "exclude": [
+    "docs/dist.js",
+    "types/index.d.ts"
+  ]
 }

@@ -1,3 +1,5 @@
+/** @import {Children} from 'endr' */
+
 import {
   Portal,
   Try,
@@ -13,8 +15,6 @@ import {
 } from 'endr';
 
 import useList from './use-list.js';
-
-/** @import {Children} from 'endr' */
 
 const { clearTimeout, document, setTimeout, setInterval } = globalThis;
 

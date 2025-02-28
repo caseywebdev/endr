@@ -257,7 +257,7 @@
  *           | string
  *           | number
  *           | boolean
- *           | ((...args: any[]) => any)
+ *           | ((...args: any[]) => unknown)
  *           | null
  *           | undefined
  *         ? K
@@ -278,7 +278,7 @@
  * @template [T=unknown] Default is `unknown`
  * @typedef {T extends FC
  *   ? Parameters<T>[0] extends undefined
- *     ? {}
+ *     ? Record<never, never>
  *     : Parameters<T>[0]
  *   : T extends keyof HTMLElementTagNameMap
  *     ? ElementProps<HTMLElementTagNameMap[T]>
@@ -287,7 +287,7 @@
  *       : UnknownElementProps} Props
  */
 
-/** @typedef {any} Key */
+/** @typedef {unknown} Key */
 
 /** @typedef {{ type: Type; props: Props; key: Key }} Def */
 
@@ -296,7 +296,7 @@
  * @typedef {{ current: T }} Ref
  */
 
-/** @typedef {(() => void | unknown) | void | undefined} BeforeEffect */
+/** @typedef {(() => unknown) | void} BeforeEffect */
 
 /** @typedef {() => BeforeEffect} AfterEffect */
 
@@ -326,7 +326,10 @@
 /**
  * @typedef {{
  *   child: Vnode | null;
- *   contexts: Map<Context<any>, { deps: Set<Vnode>; value: any }> | null;
+ *   contexts: Map<
+ *     Context<unknown>,
+ *     { deps: Set<Vnode>; value: unknown }
+ *   > | null;
  *   depth: number;
  *   effects: Effect[] | null;
  *   index: number;
@@ -348,7 +351,9 @@
 
 /**
  * @template T
- * @typedef {ReturnType<typeof createContext<T>>} Context
+ * @typedef {((props: { children?: Children; value: T }) => Children) & {
+ *   value: T;
+ * }} Context
  */
 
 /**
@@ -432,33 +437,35 @@ export const Try = props => {
  * @param {T} value
  */
 export const createContext = value => {
-  const Context = Object.assign(
-    /** @param {{ value: T; children?: Children }} props */
-    ({ value, children }) => {
-      const vnode = /** @type {Vnode} */ (currentVnode);
+  /** @type {Context<T>} */
+  const Context = ({ value, children }) => {
+    const vnode = /** @type {Vnode} */ (currentVnode);
 
-      const context = useMemo(() => {
-        const context = { deps: /** @type {Set<Vnode>} */ (new Set()), value };
-        vnode.contexts = new Map(vnode.contexts).set(Context, context);
-        return context;
-      });
+    const context = useMemo(() => {
+      const context = { deps: /** @type {Set<Vnode>} */ (new Set()), value };
+      vnode.contexts = new Map(vnode.contexts).set(
+        /** @type {Context<unknown>} */ (Context),
+        context
+      );
+      return context;
+    });
 
-      if (value !== context.value) {
-        context.value = value;
-        for (const dep of context.deps) {
-          dep.state = 1;
-          let { parent } = dep;
-          while (parent && parent !== vnode && !parent.state) {
-            parent.state = 2;
-            ({ parent } = parent);
-          }
+    if (value !== context.value) {
+      context.value = value;
+      for (const dep of context.deps) {
+        dep.state = 1;
+        let { parent } = dep;
+        while (parent && parent !== vnode && !parent.state) {
+          parent.state = 2;
+          ({ parent } = parent);
         }
       }
+    }
 
-      return children;
-    },
-    { value }
-  );
+    return children;
+  };
+
+  Context.value = value;
 
   return Context;
 };
@@ -515,7 +522,7 @@ const updateNode = (node, prev, next) => {
 
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
-      // @ts-ignore
+      // @ts-expect-error assignment of a readonly property would fail
     } else if (isSimpleProperty(node, key)) node[key] = '';
     else node.removeAttribute(key);
   }
@@ -534,7 +541,7 @@ const updateNode = (node, prev, next) => {
       const nextStyle = /** @type {Partial<CSSStyleDeclaration>} */ (next[key]);
       for (const key in prevStyle) if (!(key in nextStyle)) style[key] = '';
       for (const key in nextStyle) style[key] = nextStyle[key] ?? '';
-      // @ts-ignore
+      // @ts-expect-error assignment of a readonly property would fail
     } else if (isSimpleProperty(node, key)) node[key] = next[key] ?? '';
     else if (next[key] != null) {
       node.setAttribute(key, /** @type {string} */ (next[key]));
@@ -630,7 +637,7 @@ const depsChanged = (before, after) => {
 };
 
 /**
- * @template {(...args: any[]) => any} T
+ * @template {(...args: any[]) => unknown} T
  * @param {T} fn
  */
 export const useCallback = fn => {
@@ -792,7 +799,7 @@ const update = vnode => {
   const { afterEffects, inserts, moves, nodeUpdates } = queues;
 
   let child = vnode.child;
-  const prevChildren = child && /** @type {Map<any, Vnode>} */ (new Map());
+  const prevChildren = child && /** @type {Map<unknown, Vnode>} */ (new Map());
   for (; child; child = child.sibling) {
     /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).set(
       child.key ?? child.index,
@@ -865,15 +872,10 @@ const update = vnode => {
           queues,
           refs: null,
           sibling: null,
-          state: /** @type {const} */ (1),
+          state: 1,
           type,
           ...(type === Portal
-            ? {
-                parentNode: /** @type {Props<typeof Portal>} */ (props).to,
-                prevNode: /** @type {Element} */ (
-                  /** @type {Props<typeof Portal>} */ (props).to.lastChild
-                )
-              }
+            ? { parentNode: props.to, prevNode: props.to.lastChild }
             : { parentNode, prevNode })
         };
       } catch (exception) {
@@ -1020,7 +1022,7 @@ export const createRoot = parentNode => {
     queues,
     refs: null,
     sibling: null,
-    state: /** @type {const} */ (1),
+    state: 1,
     type: Fragment
   };
 

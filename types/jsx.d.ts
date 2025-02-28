@@ -1,9 +1,11 @@
 import type { Def, Key, Props, TagName, Type } from './index.d.ts';
 
 export namespace JSX {
-  type Element = Def;
-  type ElementChildrenAttribute = { children: unknown };
-  type ElementType = Type;
-  type IntrinsicAttributes = { key?: Key };
-  type IntrinsicElements = { [T in TagName]: IntrinsicAttributes & Props<T> };
+  export type Element = Def;
+  export type ElementChildrenAttribute = { children: unknown };
+  export type ElementType = Type;
+  export type IntrinsicAttributes = { key?: Key };
+  export type IntrinsicElements = {
+    [T in TagName]: IntrinsicAttributes & Props<T>;
+  };
 }

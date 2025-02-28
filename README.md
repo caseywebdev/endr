@@ -71,7 +71,7 @@ being found.
   createPortal(<div />, parentElement)
   ```
 - Exceptions thrown during render can be caught by the nearest Try component.
-  ```js
+  ```jsx
   const MyComponent () => {
     const [error, setError] = useState(undefined);
 

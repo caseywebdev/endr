@@ -1,3 +1,5 @@
+/** @import {Ref} from 'endr' */
+
 import { useCallback, useEffect, useMemo, useState } from 'endr';
 
 const { document, getComputedStyle, Document, ResizeObserver, window, Window } =
@@ -48,7 +50,7 @@ const getScrollParent = ({ axis, el }) => {
 /**
  * @param {{
  *   axis?: 'x' | 'y';
- *   containerRef: import('endr').Ref<HTMLElement | null>;
+ *   containerRef: Ref<HTMLElement | null>;
  *   growBuffer?: number;
  *   length: number;
  *   minIndex?: number;

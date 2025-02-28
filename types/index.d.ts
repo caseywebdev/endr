@@ -1,22 +1,22 @@
 export function jsx<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: any;
+    key: unknown;
 };
 export function jsxs<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: any;
+    key: unknown;
 };
 export function jsxDEV<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: any;
+    key: unknown;
 };
 export function jsxsDEV<T extends Type>(type: T, props: Props<T>, key?: Key): {
     type: T;
     props: Props<T>;
-    key: any;
+    key: unknown;
 };
 export function Fragment(props: {
     children?: Children;
@@ -29,17 +29,12 @@ export function Try(props: {
     children?: Children;
     catch: Vnode["catch"];
 }): Children;
-export function createContext<T>(value: T): (({ value, children }: {
-    value: T;
-    children?: Children;
-}) => Children) & {
-    value: T;
-};
+export function createContext<T>(value: T): Context<T>;
 export function useRef<T>(initial: T | (() => T)): Ref<T>;
 export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
 export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
 export function useState<T>(initial: T | (() => T)): State<T>;
-export function useCallback<T extends (...args: any[]) => any>(fn: T): T;
+export function useCallback<T extends (...args: any[]) => unknown>(fn: T): T;
 export function memo<Component extends FC>(Component: Component, memo?: typeof defaultMemo): Component;
 export function useContext<T extends Context<any>>(Context: T): T["value"];
 export function createRoot(parentNode: ParentNode): Root;
@@ -255,12 +250,12 @@ export type SVGAttributes = DataAttributes & {
     z?: string | null;
 };
 export type ElementAttributes<T extends Element> = T extends SVGElement ? SVGAttributes : DataAttributes;
-export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attributes = ElementAttributes<T>> = { [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared ? K : K extends keyof T ? T[K] extends string | number | boolean | ((...args: any[]) => any) | null | undefined ? K : never : K]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] | null : K extends keyof Attributes ? Attributes[K] : never; };
+export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attributes = ElementAttributes<T>> = { [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared ? K : K extends keyof T ? T[K] extends string | number | boolean | ((...args: any[]) => unknown) | null | undefined ? K : never : K]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] | null : K extends keyof Attributes ? Attributes[K] : never; };
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
 };
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? {} : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? ElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? ElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
-export type Key = any;
+export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? Record<never, never> : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? ElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? ElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
+export type Key = unknown;
 export type Def = {
     type: Type;
     props: Props;
@@ -269,7 +264,7 @@ export type Def = {
 export type Ref<T> = {
     current: T;
 };
-export type BeforeEffect = (() => void | unknown) | void | undefined;
+export type BeforeEffect = (() => unknown) | void;
 export type AfterEffect = () => BeforeEffect;
 export type Effect = {
     before: BeforeEffect;
@@ -291,9 +286,9 @@ export type Queues = {
 export type ParentNode = Element | ShadowRoot;
 export type Vnode = {
     child: Vnode | null;
-    contexts: Map<Context<any>, {
+    contexts: Map<Context<unknown>, {
         deps: Set<Vnode>;
-        value: any;
+        value: unknown;
     }> | null;
     depth: number;
     effects: Effect[] | null;
@@ -312,7 +307,12 @@ export type Vnode = {
     state: 0 | 1 | 2 | 3;
     type: Type;
 };
-export type Context<T> = ReturnType<typeof createContext<T>>;
+export type Context<T> = ((props: {
+    children?: Children;
+    value: T;
+}) => Children) & {
+    value: T;
+};
 export type SetState<T> = <U extends T>(value: (T extends Function ? never : U) | ((current: T) => U)) => U;
 export type State<T> = [T, SetState<T>];
 /**
