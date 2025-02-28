@@ -34,18 +34,19 @@ export function useRef<T>(initial: T | (() => T)): Ref<T>;
 export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
 export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
 export function useState<T>(initial: T | (() => T)): State<T>;
-export function useCallback<T extends (...args: any[]) => unknown>(fn: T): T;
-export function memo<Component extends FC>(Component: Component, memo?: typeof defaultMemo): Component;
+export function useCallback<T extends AnyFunction>(fn: T): T;
+export function memo<T extends Component>(Component: T, memo?: typeof defaultMemo): T;
 export function useContext<T extends Context<any>>(Context: T): T["value"];
 export function createRoot(parentNode: ParentNode): Root;
 export type Recursive<T> = T | RecursiveArray<T>;
 export type RecursiveArray<T> = Recursive<T>[];
+export type AnyFunction = (...args: any[]) => unknown;
 export type Children = Recursive<Def | string | number | false | null | undefined | void>;
-export type FC = ((props: any) => Children) & {
+export type Component = ((props: any) => Children) & {
     memo?: (a: Props, b: Props) => boolean;
 };
 export type TagName = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap;
-export type Type = TagName | FC;
+export type Type = Component | TagName;
 export type SharedElementProps<T = unknown> = {
     children?: Children;
     ref?: Ref<T | null> | null;
@@ -250,11 +251,11 @@ export type SVGAttributes = DataAttributes & {
     z?: string | null;
 };
 export type ElementAttributes<T extends Element> = T extends SVGElement ? SVGAttributes : DataAttributes;
-export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attributes = ElementAttributes<T>> = { [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared ? K : K extends keyof T ? T[K] extends string | number | boolean | ((...args: any[]) => unknown) | null | undefined ? K : never : K]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] | null : K extends keyof Attributes ? Attributes[K] : never; };
+export type ElementProps<T extends Element, Shared = SharedElementProps<T>, Attributes = ElementAttributes<T>> = { [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared ? K : K extends keyof T ? T[K] extends string | number | boolean | AnyFunction | null | undefined ? K : never : K]?: K extends keyof Shared ? Shared[K] : K extends keyof T ? T[K] | null : K extends keyof Attributes ? Attributes[K] : never; };
 export type UnknownElementProps = SharedElementProps & {
     [K: string]: unknown;
 };
-export type Props<T = unknown> = T extends FC ? Parameters<T>[0] extends undefined ? Record<never, never> : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? ElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? ElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
+export type Props<T = unknown> = T extends Component ? Parameters<T>[0] extends undefined ? Record<never, never> : Parameters<T>[0] : T extends keyof HTMLElementTagNameMap ? ElementProps<HTMLElementTagNameMap[T]> : T extends keyof SVGElementTagNameMap ? ElementProps<SVGElementTagNameMap[T]> : UnknownElementProps;
 export type Key = unknown;
 export type Def = {
     type: Type;
@@ -296,7 +297,7 @@ export type Vnode = {
     key: Key;
     lastNode: Element | Text | null;
     node: Element | Text | null;
-    catch: (exception: any) => void;
+    catch: (exception: unknown) => void;
     parent: Vnode | null;
     parentNode: ParentNode;
     prevNode: Element | Text | null;
@@ -313,7 +314,7 @@ export type Context<T> = ((props: {
 }) => Children) & {
     value: T;
 };
-export type SetState<T> = <U extends T>(value: (T extends Function ? never : U) | ((current: T) => U)) => U;
+export type SetState<T> = <U extends T>(value: (T extends AnyFunction ? never : U) | ((current: T) => U)) => U;
 export type State<T> = [T, SetState<T>];
 /**
  * @param {Props} prev

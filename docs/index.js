@@ -66,13 +66,11 @@ const Tile = memo(
 
     return (
       <Try
-        catch={
-          /** @param {Error} er */ er => {
-            setColor(er.message);
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = setTimeout(() => setColor('black'), 5000);
-          }
-        }
+        catch={er => {
+          setColor(/** @type {Error} */ (er).message);
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = setTimeout(() => setColor('black'), 5000);
+        }}
       >
         <div
           onpointerdown={activate}

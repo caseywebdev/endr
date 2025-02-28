@@ -2,10 +2,6 @@
 
 #!/bin/sh -e
 
-node_modules/.bin/eslint
-
-node_modules/.bin/tsc
-
 node_modules/.bin/tsc \
   --allowJs \
   --checkJs \
@@ -15,6 +11,10 @@ node_modules/.bin/tsc \
   --strict \
   --target ESNext \
   src/index.js
+
+node_modules/.bin/eslint
+
+node_modules/.bin/tsc
 
 exec node_modules/.bin/esbuild $1 \
   --bundle \

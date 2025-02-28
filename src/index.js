@@ -8,6 +8,8 @@
  * @typedef {Recursive<T>[]} RecursiveArray
  */
 
+/** @typedef {(...args: any[]) => unknown} AnyFunction */
+
 /**
  * @typedef {Recursive<
  *   Def | string | number | false | null | undefined | void
@@ -17,12 +19,12 @@
 /**
  * @typedef {((props: any) => Children) & {
  *   memo?: (a: Props, b: Props) => boolean;
- * }} FC
+ * }} Component
  */
 
 /** @typedef {keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap} TagName */
 
-/** @typedef {TagName | FC} Type */
+/** @typedef {Component | TagName} Type */
 
 /**
  * @template [T=unknown] Default is `unknown`
@@ -257,7 +259,7 @@
  *           | string
  *           | number
  *           | boolean
- *           | ((...args: any[]) => unknown)
+ *           | AnyFunction
  *           | null
  *           | undefined
  *         ? K
@@ -276,7 +278,7 @@
 
 /**
  * @template [T=unknown] Default is `unknown`
- * @typedef {T extends FC
+ * @typedef {T extends Component
  *   ? Parameters<T>[0] extends undefined
  *     ? Record<never, never>
  *     : Parameters<T>[0]
@@ -336,7 +338,7 @@
  *   key: Key;
  *   lastNode: Element | Text | null;
  *   node: Element | Text | null;
- *   catch: (exception: any) => void;
+ *   catch: (exception: unknown) => void;
  *   parent: Vnode | null;
  *   parentNode: ParentNode;
  *   prevNode: Element | Text | null;
@@ -359,7 +361,7 @@
 /**
  * @template T
  * @typedef {<U extends T>(
- *   value: (T extends Function ? never : U) | ((current: T) => U)
+ *   value: (T extends AnyFunction ? never : U) | ((current: T) => U)
  * ) => U} SetState
  */
 
@@ -404,7 +406,7 @@ const isEmpty = value => value == null || value === false || value === '';
 
 /**
  * @param {unknown} value
- * @returns {value is Function}
+ * @returns {value is AnyFunction}
  */
 const isFunction = value => typeof value === 'function';
 
@@ -637,7 +639,7 @@ const depsChanged = (before, after) => {
 };
 
 /**
- * @template {(...args: any[]) => unknown} T
+ * @template {AnyFunction} T
  * @param {T} fn
  */
 export const useCallback = fn => {
@@ -661,8 +663,8 @@ const defaultMemo = (prev, next) => {
 };
 
 /**
- * @template {FC} Component
- * @param {Component} Component
+ * @template {Component} T
+ * @param {T} Component
  * @param {typeof defaultMemo} [memo]
  */
 export const memo = (Component, memo = defaultMemo) => {
