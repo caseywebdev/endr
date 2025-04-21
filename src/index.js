@@ -370,7 +370,7 @@
  * @typedef {[T, SetState<T>]} State
  */
 
-const { console, queueMicrotask } = globalThis;
+const { console, queueMicrotask, Element } = globalThis;
 
 /**
  * @template {Type} T
@@ -395,6 +395,9 @@ const emptyDef = jsx(emptyType, emptyProps);
 const textType = /** @type {Type} */ ({});
 
 const emptyDeps = /** @type {unknown[]} */ ([]);
+
+const moveBefore =
+  'moveBefore' in Element.prototype ? 'moveBefore' : 'insertBefore';
 
 const svgNs = 'http://www.w3.org/2000/svg';
 
@@ -954,8 +957,11 @@ const flush = queues => {
   for (let i = 0; i < moves.length; ++i) {
     const vnode = moves[i];
     const { parentNode, prevNode } = vnode;
-    if (prevNode) prevNode.after(...getNodes(vnode));
-    else parentNode.prepend(...getNodes(vnode));
+    const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
+    for (const node of getNodes(vnode)) {
+      // @ts-expect-error moveBefore is available on modern browsers
+      parentNode[moveBefore](node, before);
+    }
   }
 
   queues.moves = [];
@@ -963,8 +969,10 @@ const flush = queues => {
   for (let i = 0; i < inserts.length; ++i) {
     const { node, parentNode, prevNode, props } = inserts[i];
     updateNode(/** @type {Element} */ (node), emptyProps, props);
-    if (prevNode) prevNode.after(/** @type {Element} */ (node));
-    else parentNode.prepend(/** @type {Element} */ (node));
+    parentNode.insertBefore(
+      /** @type {Element} */ (node),
+      prevNode ? prevNode.nextSibling : parentNode.firstChild
+    );
   }
 
   queues.inserts = [];
