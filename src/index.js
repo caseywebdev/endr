@@ -856,7 +856,8 @@ const update = vnode => {
       if (
         child.parentNode === parentNode &&
         child.lastNode &&
-        prevNode !== child.prevNode
+        child.prevNode &&
+        child.prevNode !== prevNode
       ) {
         needsMove = true;
       }
@@ -954,6 +955,19 @@ const flush = queues => {
 
   queues.removes = [];
 
+  for (let i = 0; i < moves.length; ++i) {
+    const vnode = moves[i];
+    const { parentNode, prevNode } = vnode;
+    const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
+    const nodes = getNodes(vnode);
+    for (let i = 0; i < nodes.length; ++i) {
+      // @ts-expect-error moveBefore is available on modern browsers
+      parentNode[moveBefore](nodes[i], before);
+    }
+  }
+
+  queues.moves = [];
+
   for (let i = 0; i < inserts.length; ++i) {
     const { node, parentNode, prevNode, props } = inserts[i];
     updateNode(/** @type {Element} */ (node), emptyProps, props);
@@ -964,18 +978,6 @@ const flush = queues => {
   }
 
   queues.inserts = [];
-
-  for (let i = 0; i < moves.length; ++i) {
-    const vnode = moves[i];
-    const { parentNode, prevNode } = vnode;
-    const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
-    for (const node of getNodes(vnode)) {
-      // @ts-expect-error moveBefore is available on modern browsers
-      if (node.nextSibling !== before) parentNode[moveBefore](node, before);
-    }
-  }
-
-  queues.moves = [];
 
   for (let i = 0; i < nodeUpdates.length; ++i) updateNode(...nodeUpdates[i]);
 
