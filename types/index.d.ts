@@ -279,7 +279,6 @@ export type Root = {
 export type Queues = {
     afterEffects: Vnode[];
     inserts: Vnode[];
-    moves: Vnode[];
     nodeUpdates: Parameters<typeof updateNode>[];
     removes: (Element | Text)[];
     updates: Vnode[];

@@ -316,7 +316,6 @@
  * @typedef {{
  *   afterEffects: Vnode[];
  *   inserts: Vnode[];
- *   moves: Vnode[];
  *   nodeUpdates: Parameters<typeof updateNode>[];
  *   removes: (Element | Text)[];
  *   updates: Vnode[];
@@ -801,7 +800,7 @@ const getNodes = ({ child, node }) => {
 /** @param {Vnode} vnode */
 const update = vnode => {
   const { depth, queues } = vnode;
-  const { afterEffects, inserts, moves, nodeUpdates } = queues;
+  const { afterEffects, inserts, nodeUpdates } = queues;
 
   let child = vnode.child;
   const prevChildren = child && /** @type {Map<unknown, Vnode>} */ (new Map());
@@ -838,7 +837,6 @@ const update = vnode => {
   ) {
     const { type, props, key } = normalizeDef(defs[i]);
     let child = prevChildren?.get(key ?? i);
-    let needsMove = false;
     /** @type {Parameters<typeof updateNode> | null} */
     let nodeUpdate = null;
     let needsInsert = false;
@@ -856,10 +854,9 @@ const update = vnode => {
       if (
         child.parentNode === parentNode &&
         child.lastNode &&
-        child.prevNode &&
         child.prevNode !== prevNode
       ) {
-        needsMove = true;
+        needsInsert = true;
       }
     } else {
       try {
@@ -895,7 +892,6 @@ const update = vnode => {
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
     updateChild(child);
-    if (needsMove) moves.push(child);
     if (nodeUpdate) nodeUpdates.push(nodeUpdate);
     if (needsInsert) inserts.push(child);
     if (child.parentNode === parentNode && child.lastNode) {
@@ -949,33 +945,27 @@ const remove = (vnode, removeNode = true) => {
 
 /** @param {Queues} queues */
 const flush = queues => {
-  const { afterEffects, inserts, moves, nodeUpdates, removes } = queues;
+  const { afterEffects, inserts, nodeUpdates, removes } = queues;
 
   for (let i = removes.length - 1; i >= 0; --i) removes[i].remove();
 
   queues.removes = [];
 
-  for (let i = 0; i < moves.length; ++i) {
-    const vnode = moves[i];
-    const { parentNode, prevNode } = vnode;
-    const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
-    const nodes = getNodes(vnode);
-    for (let i = 0; i < nodes.length; ++i) {
-      const node = nodes[i];
-      // @ts-expect-error moveBefore is available on modern browsers
-      if (node.nextSibling !== before) parentNode[moveBefore](node, before);
-    }
-  }
-
-  queues.moves = [];
-
   for (let i = 0; i < inserts.length; ++i) {
-    const { node, parentNode, prevNode, props } = inserts[i];
-    updateNode(/** @type {Element} */ (node), emptyProps, props);
-    parentNode.insertBefore(
-      /** @type {Element} */ (node),
-      prevNode ? prevNode.nextSibling : parentNode.firstChild
-    );
+    const vnode = inserts[i];
+    const { node, parentNode, prevNode, props } = vnode;
+    const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
+    if (node && !node.parentNode) {
+      updateNode(node, emptyProps, props);
+      parentNode.insertBefore(node, before);
+    } else {
+      const nodes = getNodes(vnode);
+      for (let i = 0; i < nodes.length; ++i) {
+        const node = nodes[i];
+        // @ts-expect-error moveBefore is available on modern browsers
+        if (node.nextSibling !== before) parentNode[moveBefore](node, before);
+      }
+    }
   }
 
   queues.inserts = [];
@@ -1011,7 +1001,6 @@ export const createRoot = parentNode => {
   const queues = {
     afterEffects: [],
     inserts: [],
-    moves: [],
     nodeUpdates: [],
     removes: [],
     updates: []

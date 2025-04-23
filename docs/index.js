@@ -16,9 +16,14 @@ import {
 
 import useList from './use-list.js';
 
-const { clearTimeout, document, setTimeout, setInterval } = globalThis;
+const { clearTimeout, clearInterval, document, setTimeout, setInterval } =
+  globalThis;
 
 const resolution = 10;
+
+/** @param {number} n */
+const getColor = n =>
+  `rgb(${32 + ((n * 12) % 128)}, ${32 + ((n * 23) % 128)}, ${32 + ((n * 56) % 128)})`;
 
 /** @param {{ children: Children }} props */
 const Flaky = ({ children }) => {
@@ -135,7 +140,7 @@ const ListItem = memo(
         alignItems: 'center',
         justifyContent: 'center',
         aspectRatio: '1',
-        backgroundColor: `rgb(${(index * 13) % 128}, ${(index * 19) % 128}, ${(index * 23) % 128})`
+        backgroundColor: getColor(index)
       }}
     >
       Item {index + 1}
@@ -149,9 +154,15 @@ const length = 10000;
 
 const Root = () => {
   const [now, setNow] = useState(new Date().getSeconds());
+  const [inputs, setInputs] = useState(Array.from({ length: 9 }, (_, i) => i));
 
   useEffect(() => {
-    setInterval(() => setNow(new Date().getSeconds()), 1000);
+    const intervalId = setInterval(() => {
+      setNow(new Date().getSeconds());
+      setInputs(inputs => inputs.toSorted(() => Math.random() - 0.5));
+    }, 1000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
@@ -172,6 +183,42 @@ const Root = () => {
       >
         {Array.from({ length: resolution * resolution }, (_, i) => (
           <Tile key={i} x={i % resolution} y={Math.floor(i / resolution)} />
+        ))}
+      </div>
+      <div
+        style={{
+          boxSizing: 'border-box',
+          cursor: 'crosshair',
+          display: 'grid',
+          gap: '0.25rem',
+          gridTemplate: `repeat(3, 1fr) / repeat(3, 1fr)`,
+          padding: '0.25rem'
+        }}
+      >
+        {inputs.map(input => (
+          <div
+            key={input}
+            style={{
+              background: getColor(input),
+              borderRadius: '0.25rem',
+              color: 'white',
+              display: 'flex',
+              padding: '0.5rem'
+            }}
+          >
+            <div style={{ flex: '1', padding: '0.5rem' }}>
+              Input {input + 1}
+            </div>
+            <input
+              style={{
+                display: 'block',
+                padding: '0.5rem',
+                flex: '1',
+                borderRadius: '0.25rem',
+                border: '0'
+              }}
+            />
+          </div>
         ))}
       </div>
       <div style={{ padding: '1rem' }}>
