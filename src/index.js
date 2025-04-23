@@ -962,8 +962,10 @@ const flush = queues => {
       const nodes = getNodes(vnode);
       for (let i = 0; i < nodes.length; ++i) {
         const node = nodes[i];
+        if (node === before || node.nextSibling === before) break;
+
         // @ts-expect-error moveBefore is available on modern browsers
-        if (node.nextSibling !== before) parentNode[moveBefore](node, before);
+        parentNode[moveBefore](node, before);
       }
     }
   }
