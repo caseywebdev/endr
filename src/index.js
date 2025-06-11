@@ -871,15 +871,14 @@ const update = vnode => {
           lastNode: null,
           node: createNode(type, props, parentNode),
           parent: vnode,
+          parentNode: type === Portal ? props.to : parentNode,
+          prevNode: type === Portal ? props.to.lastChild : prevNode,
           props,
           queues,
           refs: null,
           sibling: null,
           state: 1,
-          type,
-          ...(type === Portal
-            ? { parentNode: props.to, prevNode: props.to.lastChild }
-            : { parentNode, prevNode })
+          type
         };
       } catch (exception) {
         vnode.catch(exception);
