@@ -37,7 +37,7 @@ export function useState<T>(initial: T | (() => T)): State<T>;
 export function useCallback<T extends AnyFunction>(fn: T): T;
 export function memo<T extends Component>(Component: T, memo?: typeof defaultMemo): T;
 export function useContext<T extends Context<any>>(Context: T): T["value"];
-export function createRoot(parentNode: ParentNode): Root;
+export function createRender(parentNode: ParentNode): (children?: Children) => void;
 export type Recursive<T> = T | RecursiveArray<T>;
 export type RecursiveArray<T> = Recursive<T>[];
 export type AnyFunction = (...args: any[]) => unknown;
@@ -271,10 +271,6 @@ export type Effect = {
     before: BeforeEffect;
     after: AfterEffect | undefined;
     deps: unknown[] | undefined;
-};
-export type Root = {
-    render: (children: Children) => void;
-    unmount: () => void;
 };
 export type Queues = {
     afterEffects: Vnode[];

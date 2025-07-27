@@ -310,8 +310,6 @@
  * }} Effect
  */
 
-/** @typedef {{ render: (children: Children) => void; unmount: () => void }} Root */
-
 /**
  * @typedef {{
  *   afterEffects: Vnode[];
@@ -411,12 +409,6 @@ const isEmpty = value => value == null || value === false || value === '';
  * @returns {value is AnyFunction}
  */
 const isFunction = value => typeof value === 'function';
-
-/**
- * @param {unknown} value
- * @returns {value is (unknown)[]}
- */
-const isArray = value => Array.isArray(value);
 
 /**
  * @param {unknown} value
@@ -622,7 +614,7 @@ export const useState = initial => {
       return value;
     }
   ]);
-  return /** @type {State<T>} */ ([...state]);
+  return state;
 };
 
 /**
@@ -647,7 +639,9 @@ const depsChanged = (before, after) => {
 export const useCallback = fn => {
   const ref = useRef(() => fn);
   ref.current = fn;
-  return useMemo(() => /** @type {T} */ ((...args) => ref.current(...args)));
+  return useMemo(
+    () => /** @type {T} */ ((...args) => ref.current.apply(null, args))
+  );
 };
 
 /**
@@ -727,10 +721,7 @@ const queueUpdate = vnode => {
     queueMicrotask(() => {
       const batch = updates.sort(batchComparator);
       queues.updates = [];
-      for (let i = 0; i < batch.length; ++i) {
-        const vnode = batch[i];
-        if (vnode.state === 1) update(vnode);
-      }
+      for (const vnode of batch) if (vnode.state === 1) update(vnode);
       flush(queues);
     });
   }
@@ -755,7 +746,11 @@ const getDefs = vnode => {
       [currentVnode, effectIndex, refIndex] = prev;
     }
   }
-  return isEmpty(children) ? [] : isArray(children) ? children : [children];
+  return isEmpty(children)
+    ? []
+    : Array.isArray(children)
+      ? children
+      : [children];
 };
 
 /** @param {unknown} def */
@@ -793,7 +788,7 @@ const getNodes = ({ child, node }) => {
 
   /** @type {(Element | Text)[]} */
   const nodes = [];
-  for (; child; child = child.sibling) nodes.push(...getNodes(child));
+  for (; child; child = child.sibling) nodes.push.apply(nodes, getNodes(child));
   return nodes;
 };
 
@@ -815,8 +810,7 @@ const update = vnode => {
 
   if (vnode.effects) {
     try {
-      for (let i = 0; i < vnode.effects.length; ++i) {
-        const effect = vnode.effects[i];
+      for (const effect of vnode.effects) {
         if (effect.after && effect.before) {
           effect.before();
           effect.before = undefined;
@@ -900,9 +894,7 @@ const update = vnode => {
   }
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  if (prevChildren) {
-    for (const child of prevChildren.values()) remove(child);
-  }
+  if (prevChildren) for (const child of prevChildren.values()) remove(child);
 
   if (vnode.effects) afterEffects.push(vnode);
 };
@@ -918,8 +910,7 @@ const remove = (vnode, removeNode = true) => {
 
   if (effects) {
     try {
-      for (let i = 0; i < effects.length; ++i) {
-        const effect = effects[i];
+      for (const effect of effects) {
         if (effect.before) {
           effect.before();
           effect.before = undefined;
@@ -938,29 +929,24 @@ const remove = (vnode, removeNode = true) => {
 
   if (node) {
     if (props.ref) props.ref.current = null;
-    if (removeNode) vnode.queues.removes.unshift(node);
+    if (removeNode) vnode.queues.removes.push(node);
   }
 };
 
 /** @param {Queues} queues */
 const flush = queues => {
-  const { afterEffects, inserts, nodeUpdates, removes } = queues;
-
-  for (let i = removes.length - 1; i >= 0; --i) removes[i].remove();
+  for (const node of queues.removes) node.remove();
 
   queues.removes = [];
 
-  for (let i = 0; i < inserts.length; ++i) {
-    const vnode = inserts[i];
+  for (const vnode of queues.inserts) {
     const { node, parentNode, prevNode, props } = vnode;
     const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
     if (node && !node.parentNode) {
       updateNode(node, emptyProps, props);
       parentNode.insertBefore(node, before);
     } else {
-      const nodes = getNodes(vnode);
-      for (let i = 0; i < nodes.length; ++i) {
-        const node = nodes[i];
+      for (const node of getNodes(vnode)) {
         if (node === before || node.nextSibling === before) break;
 
         // @ts-expect-error moveBefore is available on modern browsers
@@ -971,18 +957,15 @@ const flush = queues => {
 
   queues.inserts = [];
 
-  for (let i = 0; i < nodeUpdates.length; ++i) updateNode(...nodeUpdates[i]);
+  for (const args of queues.nodeUpdates) updateNode.apply(null, args);
 
   queues.nodeUpdates = [];
 
-  for (let i = 0; i < afterEffects.length; ++i) {
-    const vnode = afterEffects[i];
-    const effects = /** @type {NonNullable<Vnode['effects']>} */ (
-      vnode.effects
-    );
+  for (const vnode of queues.afterEffects) {
     try {
-      for (let j = 0; j < effects.length; ++j) {
-        const effect = effects[j];
+      for (const effect of /** @type {NonNullable<Vnode['effects']>} */ (
+        vnode.effects
+      )) {
         if (effect.after) {
           effect.before = effect.after();
           effect.after = undefined;
@@ -997,16 +980,7 @@ const flush = queues => {
 };
 
 /** @param {ParentNode} parentNode */
-export const createRoot = parentNode => {
-  /** @type {Queues} */
-  const queues = {
-    afterEffects: [],
-    inserts: [],
-    nodeUpdates: [],
-    removes: [],
-    updates: []
-  };
-
+export const createRender = parentNode => {
   /** @type {Vnode} */
   const vnode = {
     catch: defaultCatch,
@@ -1021,27 +995,24 @@ export const createRoot = parentNode => {
     parent: null,
     parentNode,
     prevNode: /** @type {Element} */ (parentNode.lastChild),
-    props: {},
-    queues,
+    props: { children: undefined },
+    queues: {
+      afterEffects: [],
+      inserts: [],
+      nodeUpdates: [],
+      removes: [],
+      updates: []
+    },
     refs: null,
     sibling: null,
     state: 1,
     type: Fragment
   };
 
-  update(vnode);
-  flush(queues);
-
-  return /** @type {Root} */ ({
-    render: children => {
-      vnode.props = { children };
-      update(vnode);
-      flush(queues);
-    },
-
-    unmount: () => {
-      remove(vnode);
-      flush(queues);
-    }
-  });
+  /** @param {Children} [children] */
+  return children => {
+    vnode.props.children = children;
+    update(vnode);
+    flush(vnode.queues);
+  };
 };

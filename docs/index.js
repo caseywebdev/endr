@@ -4,7 +4,7 @@ import {
   Portal,
   Try,
   createContext,
-  createRoot,
+  createRender,
   memo,
   useCallback,
   useContext,
@@ -246,7 +246,16 @@ const Root = () => {
         </div>
       </div>
       <button
-        onclick={root.unmount}
+        onclick={() =>
+          render(
+            <div style={{ padding: '1rem', textAlign: 'center' }}>
+              <div style={{ color: 'white', marginBottom: '1rem' }}>
+                Unmounted!
+              </div>
+              <button onclick={() => render(<Root />)}>Remount</button>
+            </div>
+          )
+        }
         style={{ position: 'fixed', bottom: '1rem', right: '1rem' }}
       >
         Unmount
@@ -255,9 +264,9 @@ const Root = () => {
   );
 };
 
-const root = createRoot(
+const render = createRender(
   /** @type {Element} */ (document.getElementById('root')).attachShadow({
     mode: 'open'
   })
 );
-root.render(<Root />);
+render(<Root />);

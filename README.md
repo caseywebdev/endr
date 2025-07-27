@@ -2,7 +2,7 @@
 An **En**gine for **D**OM **R**ecombobulation.
 
 ```jsx
-import { createRoot, useState } from 'endr';
+import { createRender, useState } from 'endr';
 
 const Root = () => {
   const [count, setCount] = useState(0);
@@ -15,7 +15,7 @@ const Root = () => {
   );
 };
 
-createRoot(document.body).render(<Root />);
+createRender(document.body)(<Root />);
 ```
 
 # Why?
@@ -88,3 +88,12 @@ being found.
     `<AllMyChildren />` or any descendents throws an exception.
   - React's `Suspense` can be recreated with `Try` by awaiting all thrown
     promises, if desired.
+- `createRender` replaces `createRoot`. `createRender` returns a render function
+  that can be called as often as desired to re-render at the root. To unmount
+  all rendered components, simply call render with no children.
+  ```js
+  import { createRender } from 'endr';
+  const render = createRender(document.body);
+  render(<MyDisappearingApp />);
+  setTimeout(() => render(), 5000);
+  ```
