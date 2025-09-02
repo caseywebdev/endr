@@ -394,7 +394,7 @@ const textType = /** @type {Type} */ ({});
 const emptyDeps = /** @type {unknown[]} */ ([]);
 
 const moveBefore =
-  'moveBefore' in Element.prototype ? 'moveBefore' : 'insertBefore';
+  Element?.prototype && 'moveBefore' in Element.prototype ? 'moveBefore' : 'insertBefore';
 
 const svgNs = 'http://www.w3.org/2000/svg';
 
@@ -498,8 +498,10 @@ const isText = node => node.nodeType === node.TEXT_NODE;
  * @param {Node} node
  * @param {keyof Node} key
  */
-const isSimpleProperty = (node, key) =>
-  key in node && (node[key] == null || !isObject(node[key]));
+const isSimpleProperty = (node, key) => {
+  const prop = node[key];
+  return prop != null && !isObject(prop);
+};
 
 /**
  * @template {Element | Text} T
@@ -517,7 +519,8 @@ const updateNode = (node, prev, next) => {
     if (key === 'children' || key in next) continue;
 
     if (key === 'ref') {
-      if (prev.ref) prev.ref.current = null;
+      const prevRef = prev.ref;
+      if (prevRef) prevRef.current = null;
       // @ts-expect-error assignment of a readonly property would fail
     } else if (isSimpleProperty(node, key)) node[key] = '';
     else node.removeAttribute(key);
@@ -527,16 +530,22 @@ const updateNode = (node, prev, next) => {
     if (key === 'children' || prev[key] === next[key]) continue;
 
     if (key === 'ref') {
-      if (prev.ref) prev.ref.current = null;
-      if (next.ref) next.ref.current = node;
+      const prevRef = prev.ref;
+      const nextRef = next.ref;
+      if (prevRef) prevRef.current = null;
+      if (nextRef) nextRef.current = node;
     } else if (key === 'style' && isObject(next[key])) {
       const { style } = /** @type {HTMLElement | SVGElement} */ (node);
       const prevStyle = /** @type {Partial<CSSStyleDeclaration>} */ (
         isObject(prev[key]) ? prev[key] : {}
       );
       const nextStyle = /** @type {Partial<CSSStyleDeclaration>} */ (next[key]);
-      for (const key in prevStyle) if (!(key in nextStyle)) style[key] = '';
-      for (const key in nextStyle) style[key] = nextStyle[key] ?? '';
+      for (const styleKey in prevStyle) {
+        if (!(styleKey in nextStyle)) style[styleKey] = '';
+      }
+      for (const styleKey in nextStyle) {
+        style[styleKey] = nextStyle[styleKey] ?? '';
+      }
       // @ts-expect-error assignment of a readonly property would fail
     } else if (isSimpleProperty(node, key)) node[key] = next[key] ?? '';
     else if (next[key] != null) {
@@ -624,10 +633,13 @@ export const useState = initial => {
 const depsChanged = (before, after) => {
   if (before === after) return false;
 
-  let { length } = before;
+  const { length } = before;
   if (length !== after.length) return true;
 
-  while (length--) if (before[length] !== after[length]) return true;
+  // Optimized loop: avoid accessing length property repeatedly
+  for (let i = 0; i < length; i++) {
+    if (before[i] !== after[i]) return true;
+  }
 
   return false;
 };
@@ -721,24 +733,28 @@ const queueUpdate = vnode => {
     queueMicrotask(() => {
       const batch = updates.sort(batchComparator);
       queues.updates = [];
-      for (const vnode of batch) if (vnode.state === 1) update(vnode);
+      for (let i = 0; i < batch.length; i++) {
+        const batchVnode = batch[i];
+        if (batchVnode.state === 1) update(batchVnode);
+      }
       flush(queues);
     });
   }
-  updates.push(vnode);
+  updates[updates.length] = vnode;
   vnode.state = 1;
 };
 
 /** @param {Vnode} vnode */
 const getDefs = vnode => {
   let { children } = vnode.props;
-  if (isFunction(vnode.type)) {
+  const vnodeType = vnode.type;
+  if (isFunction(vnodeType)) {
     const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
     currentVnode = vnode;
     effectIndex = 0;
     refIndex = 0;
     try {
-      children = vnode.type(vnode.props);
+      children = vnodeType(vnode.props);
     } catch (exception) {
       children = null;
       vnode.catch(exception);
@@ -759,12 +775,14 @@ const normalizeDef = def => {
 
   if (Array.isArray(def)) return jsx(Fragment, { children: def });
 
+  // Fast path for objects that are already valid defs
   if (
     isObject(def) &&
-    Object.keys(def).length === 3 &&
+    'type' in def &&
+    'props' in def &&
+    'key' in def &&
     (typeof def.type === 'string' || isFunction(def.type)) &&
-    isObject(def.props) &&
-    'key' in def
+    isObject(def.props)
   ) {
     return /** @type {Def} */ (def);
   }
@@ -788,7 +806,13 @@ const getNodes = ({ child, node }) => {
 
   /** @type {(Element | Text)[]} */
   const nodes = [];
-  for (; child; child = child.sibling) nodes.push.apply(nodes, getNodes(child));
+  for (; child; child = child.sibling) {
+    const childNodes = getNodes(child);
+    // Optimized: use spread operator instead of push.apply
+    for (let i = 0; i < childNodes.length; i++) {
+      nodes[nodes.length] = childNodes[i];
+    }
+  }
   return nodes;
 };
 
@@ -809,8 +833,10 @@ const update = vnode => {
   const defs = getDefs(vnode);
 
   if (vnode.effects) {
+    const effects = vnode.effects;
     try {
-      for (const effect of vnode.effects) {
+      for (let i = 0; i < effects.length; i++) {
+        const effect = effects[i];
         if (effect.after && effect.before) {
           effect.before();
           effect.before = undefined;
@@ -829,19 +855,26 @@ const update = vnode => {
     i < defs.length;
     ++i
   ) {
-    const { type, props, key } = normalizeDef(defs[i]);
+    const def = normalizeDef(defs[i]);
+    const { type, props, key } = def;
     let child = prevChildren?.get(key ?? i);
     /** @type {Parameters<typeof updateNode> | null} */
     let nodeUpdate = null;
     let needsInsert = false;
+
     if (child?.type === type) {
       /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).delete(
         key ?? i
       );
       child.index = i;
       child.sibling = null;
-      if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
-        if (child.node) nodeUpdate = [child.node, child.props, props];
+
+      const childType = child.type;
+      const childProps = child.props;
+      const childNode = child.node;
+
+      if (!isFunction(childType) || !childType.memo?.(childProps, props)) {
+        if (childNode) nodeUpdate = [childNode, childProps, props];
         child.props = props;
         child.state = 1;
       }
@@ -910,7 +943,8 @@ const remove = (vnode, removeNode = true) => {
 
   if (effects) {
     try {
-      for (const effect of effects) {
+      for (let i = 0; i < effects.length; i++) {
+        const effect = effects[i];
         if (effect.before) {
           effect.before();
           effect.before = undefined;
@@ -935,37 +969,47 @@ const remove = (vnode, removeNode = true) => {
 
 /** @param {Queues} queues */
 const flush = queues => {
-  for (const node of queues.removes) node.remove();
+  const { removes, inserts, nodeUpdates, afterEffects } = queues;
 
+  for (let i = 0; i < removes.length; i++) {
+    removes[i].remove();
+  }
   queues.removes = [];
 
-  for (const vnode of queues.inserts) {
+  for (let i = 0; i < inserts.length; i++) {
+    const vnode = inserts[i];
     const { node, parentNode, prevNode, props } = vnode;
     const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
     if (node && !node.parentNode) {
       updateNode(node, emptyProps, props);
       parentNode.insertBefore(node, before);
     } else {
-      for (const node of getNodes(vnode)) {
-        if (node === before || node.nextSibling === before) break;
+      const nodes = getNodes(vnode);
+      for (let j = 0; j < nodes.length; j++) {
+        const nodeToMove = nodes[j];
+        if (nodeToMove === before || nodeToMove.nextSibling === before) break;
 
         // @ts-expect-error moveBefore is available on modern browsers
-        parentNode[moveBefore](node, before);
+        parentNode[moveBefore](nodeToMove, before);
       }
     }
   }
-
   queues.inserts = [];
 
-  for (const args of queues.nodeUpdates) updateNode.apply(null, args);
-
+  for (let i = 0; i < nodeUpdates.length; i++) {
+    const args = nodeUpdates[i];
+    updateNode.apply(null, args);
+  }
   queues.nodeUpdates = [];
 
-  for (const vnode of queues.afterEffects) {
+  for (let i = 0; i < afterEffects.length; i++) {
+    const vnode = afterEffects[i];
+    const effects = /** @type {NonNullable<Vnode['effects']>} */ (
+      vnode.effects
+    );
     try {
-      for (const effect of /** @type {NonNullable<Vnode['effects']>} */ (
-        vnode.effects
-      )) {
+      for (let j = 0; j < effects.length; j++) {
+        const effect = effects[j];
         if (effect.after) {
           effect.before = effect.after();
           effect.after = undefined;
@@ -975,7 +1019,6 @@ const flush = queues => {
       vnode.catch(exception);
     }
   }
-
   queues.afterEffects = [];
 };
 

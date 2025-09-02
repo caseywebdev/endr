@@ -26,6 +26,7 @@
     "esbuild": "0.25",
     "eslint": "9",
     "eslint-config-coderiety": "2",
+    "jsdom": "^26.1.0",
     "typescript": "5"
   },
   "files": [
