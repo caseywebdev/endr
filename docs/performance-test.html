@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Endr Performance Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .performance-metrics { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .grid { display: grid; grid-template-columns: repeat(10, 50px); gap: 2px; }
+        .tile { 
+            width: 50px; 
+            height: 50px; 
+            background: #3498db; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .tile:hover { background: #e74c3c; }
+    </style>
+</head>
+<body>
+    <h1>Endr Performance Test</h1>
+    <div id="metrics" class="performance-metrics">
+        <h3>Performance Metrics</h3>
+        <div id="render-time">Initial render time: N/A</div>
+        <div id="update-time">Update time: N/A</div>
+        <div id="total-renders">Total renders: 0</div>
+    </div>
+    
+    <div id="root"></div>
+    
+    <script type="module">
+        import { createRender, useState, useEffect, jsx } from './dist.js';
+        
+        let renderCount = 0;
+        let lastRenderTime = 0;
+        
+        const Tile = ({ x, y, value, onClick }) => {
+            const [active, setActive] = useState(false);
+            
+            const handleClick = () => {
+                setActive(!active);
+                onClick?.(x, y);
+            };
+            
+            return jsx('div', {
+                className: 'tile',
+                style: { 
+                    background: active ? '#e74c3c' : '#3498db' 
+                },
+                onclick: handleClick,
+                children: [value]
+            });
+        };
+        
+        const Grid = ({ size = 10 }) => {
+            const [values, setValues] = useState(() => 
+                Array.from({ length: size * size }, (_, i) => i)
+            );
+            
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    const start = performance.now();
+                    setValues(prev => [...prev].sort(() => Math.random() - 0.5));
+                    requestAnimationFrame(() => {
+                        const end = performance.now();
+                        lastRenderTime = end - start;
+                        renderCount++;
+                        document.getElementById('update-time').textContent = 
+                            `Update time: ${lastRenderTime.toFixed(2)}ms`;
+                        document.getElementById('total-renders').textContent = 
+                            `Total renders: ${renderCount}`;
+                    });
+                }, 1000);
+                
+                return () => clearInterval(interval);
+            }, []);
+            
+            const handleTileClick = (x, y) => {
+                console.log(`Clicked tile at ${x}, ${y}`);
+            };
+            
+            return jsx('div', {
+                className: 'grid',
+                children: values.map((value, i) => 
+                    jsx(Tile, {
+                        key: i,
+                        x: i % size,
+                        y: Math.floor(i / size),
+                        value,
+                        onClick: handleTileClick
+                    })
+                )
+            });
+        };
+        
+        const App = () => {
+            return jsx('div', {
+                className: 'test-container',
+                children: [
+                    jsx('h2', { children: ['Interactive Grid Test'] }),
+                    jsx('p', { children: ['Grid automatically shuffles every second to test render performance'] }),
+                    jsx(Grid, { size: 10 })
+                ]
+            });
+        };
+        
+        // Measure initial render time
+        const start = performance.now();
+        const render = createRender(document.getElementById('root'));
+        render(jsx(App));
+        
+        requestAnimationFrame(() => {
+            const end = performance.now();
+            const initialRenderTime = end - start;
+            document.getElementById('render-time').textContent = 
+                `Initial render time: ${initialRenderTime.toFixed(2)}ms`;
+        });
+    </script>
+</body>
+</html>
