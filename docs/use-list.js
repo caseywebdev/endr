@@ -57,7 +57,7 @@ const getScrollParent = ({ axis, el }) => {
  *   shrinkBuffer?: number;
  * }} p0
  */
-export default ({
+export const useList = ({
   axis = 'y',
   containerRef,
   growBuffer = 200,

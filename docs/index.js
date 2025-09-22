@@ -14,12 +14,15 @@ import {
   useState
 } from 'endr';
 
-import useList from './use-list.js';
+import { getRandomWord } from './get-random-word.js';
+import { useList } from './use-list.js';
 
 const { clearTimeout, clearInterval, document, setTimeout, setInterval } =
   globalThis;
 
 const resolution = 10;
+
+const numberFormatter = new Intl.NumberFormat();
 
 /** @param {number} n */
 const getColor = n =>
@@ -128,22 +131,25 @@ const Tile = memo(
 );
 
 const ListItem = memo(
-  /** @param {{ index: number }} props */
-  ({ index }) => (
+  /** @param {{ item: { color: string; name: string; words: string[] } }} props */
+  ({ item: { color, name, words } }) => (
     <div
-      key={index}
       style={{
         borderTop: '10px solid #000',
         borderRight: '10px solid #000',
         padding: '1rem',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         aspectRatio: '1',
-        backgroundColor: getColor(index)
+        backgroundColor: color
       }}
     >
-      Item {index + 1}
+      <div style={{ fontWeight: 'bold' }}>{name}</div>
+      {words.map((word, i) => (
+        <div key={i}>{word}</div>
+      ))}
     </div>
   )
 );
@@ -155,6 +161,7 @@ const length = 10000;
 const Root = () => {
   const [now, setNow] = useState(new Date().getSeconds());
   const [inputs, setInputs] = useState(Array.from({ length: 9 }, (_, i) => i));
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -165,8 +172,31 @@ const Root = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const allItems = useMemo(() =>
+    Array.from({ length }, (_, i) => ({
+      color: getColor(i),
+      id: i + 1,
+      name: `Item ${numberFormatter.format(i + 1)}`,
+      words: Array.from({ length: 3 }, getRandomWord)
+    }))
+  );
+
+  const items = useMemo(() => {
+    if (!query) return allItems;
+
+    const queryWords = query.toLowerCase().split(/\s+/);
+    return allItems.filter(item =>
+      queryWords.every(queryWord =>
+        item.words.some(word => word.includes(queryWord))
+      )
+    );
+  }, [query]);
+
   const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
-  const { start, end, before, after } = useList({ containerRef, length });
+  const { start, end, before, after } = useList({
+    containerRef,
+    length: items.length
+  });
 
   return (
     <Context value={now}>
@@ -223,26 +253,44 @@ const Root = () => {
       </div>
       <div style={{ padding: '1rem' }}>
         <div
-          style={{ color: '#fff', fontWeight: 'bold', marginBottom: '0.5rem' }}
-        >
-          {length} Items
-        </div>
-        <div
-          data-list-container='true'
-          ref={containerRef}
           style={{
-            color: 'white',
-            paddingTop: `${before}px`,
-            paddingBottom: `${after}px`,
-            display: 'grid',
-            gridTemplateColumns: `repeat(auto-fill, minmax(min(200px, 50%), 1fr))`,
-            borderLeft: '10px solid #000',
-            borderBottom: '10px solid #000'
+            marginBottom: '0.5rem',
+            display: 'flex',
+            justifyContent: 'space-between'
           }}
         >
-          {Array.from({ length: end - start }, (_, i) => (
-            <ListItem key={start + i} index={start + i} />
-          ))}
+          <div style={{ color: 'white', fontWeight: 'bold' }}>
+            {numberFormatter.format(items.length)} Items
+          </div>
+          <input
+            placeholder='Search'
+            type='search'
+            value={query}
+            oninput={e =>
+              setQuery(/** @type {HTMLInputElement} */ (e.target).value)
+            }
+            style={{ borderRadius: '0.25rem', border: '0', padding: '0.5rem' }}
+          />
+        </div>
+        <div style={{ minHeight: '100vh' }}>
+          <div
+            data-list-container='true'
+            ref={containerRef}
+            style={{
+              color: 'white',
+              paddingTop: `${before}px`,
+              paddingBottom: `${after}px`,
+              display: 'grid',
+              gridTemplateColumns: `repeat(auto-fill, minmax(min(200px, 50%), 1fr))`,
+              borderLeft: '10px solid #000',
+              borderBottom: '10px solid #000'
+            }}
+          >
+            {Array.from({ length: end - start }, (_, i) => {
+              const item = items[start + i];
+              return <ListItem key={item.id} item={item} />;
+            })}
+          </div>
         </div>
       </div>
       <button
