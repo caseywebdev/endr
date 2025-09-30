@@ -471,21 +471,24 @@ export const createContext = value => {
  * @param {Props} props
  * @param {ParentNode} parentNode
  */
-const createNode = (type, props, parentNode) =>
-  isFunction(type) || type === emptyType
-    ? null
-    : type === textType
-      ? parentNode.ownerDocument.createTextNode(
-          /** @type {{ nodeValue: string }} */ (props).nodeValue
-        )
-      : parentNode.ownerDocument.createElementNS(
-          type === 'svg'
-            ? svgNs
-            : 'namespaceURI' in parentNode
-              ? parentNode.namespaceURI
-              : parentNode.host.namespaceURI,
-          type
-        );
+const createNode = (type, props, parentNode) => {
+  if (isFunction(type) || type === emptyType) return null;
+
+  if (type === textType) {
+    return parentNode.ownerDocument.createTextNode(
+      /** @type {{ nodeValue: string }} */ (props).nodeValue
+    );
+  }
+
+  return parentNode.ownerDocument.createElementNS(
+    type === 'svg'
+      ? svgNs
+      : 'namespaceURI' in parentNode
+        ? parentNode.namespaceURI
+        : parentNode.host.namespaceURI,
+    type
+  );
+};
 
 /**
  * @param {Node} node
@@ -746,11 +749,12 @@ const getDefs = vnode => {
       [currentVnode, effectIndex, refIndex] = prev;
     }
   }
-  return isEmpty(children)
-    ? []
-    : Array.isArray(children)
-      ? children
-      : [children];
+
+  if (isEmpty(children)) return [];
+
+  if (Array.isArray(children)) return children;
+
+  return [children];
 };
 
 /** @param {unknown} def */
@@ -761,7 +765,6 @@ const normalizeDef = def => {
 
   if (
     isObject(def) &&
-    Object.keys(def).length === 3 &&
     (typeof def.type === 'string' || isFunction(def.type)) &&
     isObject(def.props) &&
     'key' in def
@@ -780,16 +783,6 @@ const updateChild = vnode => {
     vnode.state = 0;
     for (; child; child = child.sibling) updateChild(child);
   }
-};
-
-/** @param {Vnode} vnode */
-const getNodes = ({ child, node }) => {
-  if (node) return [node];
-
-  /** @type {(Element | Text)[]} */
-  const nodes = [];
-  for (; child; child = child.sibling) nodes.push.apply(nodes, getNodes(child));
-  return nodes;
 };
 
 /** @param {Vnode} vnode */
@@ -846,7 +839,7 @@ const update = vnode => {
         child.state = 1;
       }
       if (
-        child.parentNode === parentNode &&
+        child.parentNode === vnode.node &&
         child.lastNode &&
         child.prevNode !== prevNode
       ) {
@@ -940,17 +933,35 @@ const flush = queues => {
   queues.removes = [];
 
   for (const vnode of queues.inserts) {
-    const { node, parentNode, prevNode, props } = vnode;
+    const { parentNode, prevNode, props } = vnode;
     const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
-    if (node && !node.parentNode) {
-      updateNode(node, emptyProps, props);
-      parentNode.insertBefore(node, before);
-    } else {
-      for (const node of getNodes(vnode)) {
+    for (let child = /** @type {Vnode | null} */ (vnode); child; ) {
+      const { node } = child;
+      if (node) {
+        if (!node.parentNode) {
+          updateNode(node, emptyProps, props);
+          parentNode.insertBefore(node, before);
+          break;
+        }
+
         if (node === before || node.nextSibling === before) break;
 
         // @ts-expect-error moveBefore is available on modern browsers
         parentNode[moveBefore](node, before);
+
+        if (child === vnode) break;
+      }
+
+      if (child.child && !node) child = child.child;
+      else if (child.sibling) child = child.sibling;
+      else {
+        while (child !== vnode && child.parent && !child.sibling) {
+          child = child.parent;
+        }
+
+        if (child === vnode) break;
+
+        child = child.sibling;
       }
     }
   }

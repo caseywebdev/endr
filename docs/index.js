@@ -1,6 +1,7 @@
 /** @import {Children} from 'endr' */
 
 import {
+  Fragment,
   Portal,
   Try,
   createContext,
@@ -160,7 +161,7 @@ const length = 10000;
 
 const Root = () => {
   const [now, setNow] = useState(new Date().getSeconds());
-  const [inputs, setInputs] = useState(Array.from({ length: 9 }, (_, i) => i));
+  const [inputs, setInputs] = useState(Array.from({ length: 10 }, (_, i) => i));
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -221,34 +222,36 @@ const Root = () => {
           cursor: 'crosshair',
           display: 'grid',
           gap: '0.25rem',
-          gridTemplate: `repeat(3, 1fr) / repeat(3, 1fr)`,
-          padding: '0.25rem'
+          gridTemplateColumns: `repeat(2, 1fr)`,
+          padding: '1rem'
         }}
       >
         {inputs.map(input => (
-          <div
-            key={input}
-            style={{
-              background: getColor(input),
-              borderRadius: '0.25rem',
-              color: 'white',
-              display: 'flex',
-              padding: '0.5rem'
-            }}
-          >
-            <div style={{ flex: '1', padding: '0.5rem' }}>
+          <Fragment key={input}>
+            <div
+              style={{
+                background: getColor(input),
+                borderBottomLeftRadius: '0.25rem',
+                borderTopLeftRadius: '0.25rem',
+                color: 'white',
+                display: 'flex',
+                padding: '0.5rem'
+              }}
+            >
               Input {input + 1}
             </div>
             <input
+              placeholder={`Input ${input + 1}`}
               style={{
+                border: '0',
+                borderBottomRightRadius: '0.25rem',
+                borderTopRightRadius: '0.25rem',
                 display: 'block',
-                padding: '0.5rem',
                 flex: '1',
-                borderRadius: '0.25rem',
-                border: '0'
+                padding: '0.5rem'
               }}
             />
-          </div>
+          </Fragment>
         ))}
       </div>
       <div style={{ padding: '1rem' }}>
