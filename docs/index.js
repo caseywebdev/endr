@@ -18,8 +18,14 @@ import {
 import { getRandomWord } from './get-random-word.js';
 import { useList } from './use-list.js';
 
-const { clearTimeout, clearInterval, document, setTimeout, setInterval } =
-  globalThis;
+const {
+  clearTimeout,
+  clearInterval,
+  document,
+  ResizeObserver,
+  setTimeout,
+  setInterval
+} = globalThis;
 
 const resolution = 10;
 
@@ -131,6 +137,108 @@ const Tile = memo(
   }
 );
 
+const boxN = Math.ceil(Math.sqrt(1_000_000_000));
+const checkboxSize = 50;
+
+const Checkboxes = () => {
+  const elRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const [{ xOffset, yOffset, xSize, ySize }, setPositions] = useState({
+    xOffset: 0,
+    yOffset: 0,
+    xSize: 0,
+    ySize: 0
+  });
+  const [checkedXY, setCheckedXY] = useState(new Set());
+
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el) return;
+
+    const _setPositions = () => {
+      const rect = el.getBoundingClientRect();
+      const xOffset = Math.max(0, Math.floor(el.scrollLeft / checkboxSize));
+      const yOffset = Math.max(0, Math.floor(el.scrollTop / checkboxSize));
+      setPositions({
+        xOffset,
+        yOffset,
+        xSize: Math.min(
+          boxN - xOffset,
+          Math.ceil((rect.width + 20) / checkboxSize)
+        ),
+        ySize: Math.min(
+          boxN - yOffset,
+          Math.ceil((rect.height + 20) / checkboxSize)
+        )
+      });
+    };
+
+    const observer = new ResizeObserver(_setPositions);
+
+    el.onscroll = _setPositions;
+
+    _setPositions();
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div style={{ padding: '10px', color: 'white', fontWeight: 'bold' }}>
+        {numberFormatter.format(boxN ** 2)} Checkboxes
+      </div>
+      <div
+        ref={elRef}
+        style={{
+          border: '10px solid white',
+          borderRadius: '10px',
+          height: '50vh',
+          overflow: 'auto'
+        }}
+      >
+        <div
+          style={{
+            boxSizing: 'border-box',
+            paddingLeft: `${xOffset * checkboxSize}px`,
+            paddingTop: `${yOffset * checkboxSize}px`,
+            width: `${boxN * checkboxSize}px`,
+            height: `${boxN * checkboxSize}px`
+          }}
+        >
+          {Array.from({ length: ySize }, (_, y) => (
+            <div key={y.toString()}>
+              {Array.from({ length: xSize }, (_, x) => (
+                <input
+                  style={{
+                    margin: '0',
+                    padding: '0',
+                    border: '0',
+                    width: `${checkboxSize}px`,
+                    height: `${checkboxSize}px`
+                  }}
+                  key={x.toString()}
+                  type='checkbox'
+                  checked={checkedXY.has(`${xOffset + x},${yOffset + y}`)}
+                  oninput={e =>
+                    setCheckedXY(checkedXY => {
+                      const next = new Set(checkedXY);
+                      if (/** @type {HTMLInputElement} */ (e.target).checked) {
+                        next.add(`${xOffset + x},${yOffset + y}`);
+                      } else {
+                        next.delete(`${xOffset + x},${yOffset + y}`);
+                      }
+                      return next;
+                    })
+                  }
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
 const ListItem = memo(
   /** @param {{ item: { color: string; name: string; words: string[] } }} props */
   ({ item: { color, name, words } }) => (
@@ -208,7 +316,7 @@ const Root = () => {
           display: 'grid',
           gap: '0.25rem',
           gridTemplate: `repeat(${resolution}, 1fr) / repeat(${resolution}, 1fr)`,
-          height: '100%',
+          height: '50vh',
           padding: '0.25rem'
         }}
       >
@@ -275,7 +383,14 @@ const Root = () => {
             style={{ borderRadius: '0.25rem', border: '0', padding: '0.5rem' }}
           />
         </div>
-        <div style={{ minHeight: '100vh' }}>
+        <div
+          style={{
+            border: '10px solid white',
+            borderRadius: '10px',
+            height: '50vh',
+            overflow: 'auto'
+          }}
+        >
           <div
             data-list-container='true'
             ref={containerRef}
@@ -295,6 +410,7 @@ const Root = () => {
             })}
           </div>
         </div>
+        <Checkboxes />
       </div>
       <button
         onclick={() =>

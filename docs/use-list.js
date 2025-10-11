@@ -33,9 +33,7 @@ const scrollStartKeys = /** @type {const} */ ({
 
 /** @param {{ axis: 'x' | 'y'; el: HTMLElement | null }} p0 */
 const getScrollParent = ({ axis, el }) => {
-  while ((el &&= el.parentElement)) {
-    if (el === body || !body.contains(el)) break;
-
+  while ((el &&= el.parentElement) && el !== body) {
     if (el[scrollSizeKeys[axis]] <= el[clientSizeKeys[axis]]) continue;
 
     const overflow = getComputedStyle(el)[overflowKeys[axis]];
@@ -65,32 +63,6 @@ export const useList = ({
   minIndex = 0,
   shrinkBuffer = growBuffer + 200
 }) => {
-  const internal = useMemo(() => ({
-    cache: /** @type {{ [key: number]: number }} */ ({}),
-    columns: 1,
-    isRendering: false,
-    observed: /** @type {HTMLElement | null} */ (null),
-    observer: /** @type {ResizeObserver | null} */ (null),
-    prev: {
-      cache: /** @type {{ [key: number]: number }} */ ({}),
-      minIndex,
-      start: minIndex
-    },
-    scrollParent: /** @type {HTMLElement | Document | null} */ (null),
-    scrollTarget: /**
-     * @type {{
-     *   align: ScrollTargetAlign;
-     *   buffer: number;
-     *   index: number;
-     * } | null}
-     */ (null),
-    syncUpdateCount: 0,
-    resolve: () => {
-      internal.scrollTarget = null;
-      internal.syncUpdateCount = 0;
-    }
-  }));
-
   const update = useCallback(() => {
     if (internal.isRendering) return;
 
@@ -284,6 +256,32 @@ export const useList = ({
     return { after, before, end, scrollTo, start };
   };
 
+  const internal = useMemo(() => ({
+    cache: /** @type {{ [key: number]: number }} */ ({}),
+    columns: 1,
+    isRendering: false,
+    observed: /** @type {HTMLElement | null} */ (null),
+    observer: new ResizeObserver(update),
+    prev: {
+      cache: /** @type {{ [key: number]: number }} */ ({}),
+      minIndex,
+      start: minIndex
+    },
+    scrollParent: /** @type {HTMLElement | Document | null} */ (null),
+    scrollTarget: /**
+     * @type {{
+     *   align: ScrollTargetAlign;
+     *   buffer: number;
+     *   index: number;
+     * } | null}
+     */ (null),
+    syncUpdateCount: 0,
+    resolve: () => {
+      internal.scrollTarget = null;
+      internal.syncUpdateCount = 0;
+    }
+  }));
+
   const [state, setState] = useState({
     after: 0,
     before: 0,
@@ -291,11 +289,10 @@ export const useList = ({
     scrollTo,
     start: 0
   });
+
   useMemo(() => {
     Object.assign(state, clamp({ end: state.end, start: state.start }));
   }, [length, minIndex]);
-
-  internal.observer ??= ResizeObserver && new ResizeObserver(update);
 
   useEffect(() => {
     const { observed, observer } = internal;
