@@ -213,7 +213,8 @@ const Checkboxes = () => {
                     padding: '0',
                     border: '0',
                     width: `${checkboxSize}px`,
-                    height: `${checkboxSize}px`
+                    height: `${checkboxSize}px`,
+                    verticalAlign: 'bottom'
                   }}
                   key={x.toString()}
                   type='checkbox'
