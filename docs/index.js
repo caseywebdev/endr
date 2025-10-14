@@ -428,6 +428,7 @@ const Root = () => {
       >
         Unmount
       </button>
+      <my-custom-element myCustomProp='foo' />
     </Context>
   );
 };
