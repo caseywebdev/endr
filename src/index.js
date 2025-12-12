@@ -367,7 +367,7 @@
  * @typedef {[T, SetState<T>]} State
  */
 
-const { console, queueMicrotask, Element } = globalThis;
+const { console, Element, queueMicrotask } = globalThis;
 
 /**
  * @template {Type} T
@@ -383,15 +383,15 @@ export const jsxDEV = jsx;
 
 export const jsxsDEV = jsx;
 
-const emptyProps = /** @type {const} */ ({});
+const emptyObject = /** @type {const} */ ({});
 
 const emptyType = /** @type {Type} */ ({});
 
-const emptyDef = jsx(emptyType, emptyProps);
+const emptyDef = jsx(emptyType, emptyObject);
+
+const emptyArray = /** @type {const} @satisfies {unknown[]} */ ([]);
 
 const textType = /** @type {Type} */ ({});
-
-const emptyDeps = /** @type {unknown[]} */ ([]);
 
 const moveBefore =
   'moveBefore' in Element.prototype ? 'moveBefore' : 'insertBefore';
@@ -491,12 +491,6 @@ const createNode = (type, props, parentNode) => {
 };
 
 /**
- * @param {Node} node
- * @returns {node is Text}
- */
-const isText = node => node.nodeType === node.TEXT_NODE;
-
-/**
  * @template {Element} Node
  * @param {Node} node
  * @param {keyof Node} key
@@ -511,7 +505,10 @@ const isSimpleProperty = (node, key) =>
  * @param {Props<T>} next
  */
 const updateNode = (node, prev, next) => {
-  if (isText(node)) {
+  if (prev === next) return;
+
+  // Element.prototype.TEXT_NODE
+  if (node.nodeType === 3) {
     node.nodeValue = /** @type {string} */ (next.nodeValue);
     return;
   }
@@ -523,7 +520,7 @@ const updateNode = (node, prev, next) => {
       if (prev.ref) prev.ref.current = null;
       // @ts-expect-error assignment of a readonly property would fail
     } else if (isSimpleProperty(node, key)) node[key] = '';
-    else node.removeAttribute(key);
+    else /** @type {Element} */ (node).removeAttribute(key);
   }
 
   for (const key in next) {
@@ -543,8 +540,11 @@ const updateNode = (node, prev, next) => {
       // @ts-expect-error assignment of a readonly property would fail
     } else if (isSimpleProperty(node, key)) node[key] = next[key] ?? '';
     else if (next[key] != null) {
-      node.setAttribute(key, /** @type {string} */ (next[key]));
-    } else node.removeAttribute(key);
+      /** @type {Element} */ (node).setAttribute(
+        key,
+        /** @type {string} */ (next[key])
+      );
+    } else /** @type {Element} */ (node).removeAttribute(key);
   }
 };
 
@@ -590,7 +590,7 @@ export const useEffect = (fn, deps) => {
  * @param {(...args: unknown[]) => T} fn
  * @param {unknown[]} deps
  */
-export const useMemo = (fn, deps = emptyDeps) => {
+export const useMemo = (fn, deps = emptyArray) => {
   const ref = useRef(() => ({ value: fn(), deps }));
   if (depsChanged(ref.current.deps, deps)) {
     ref.current.value = fn();
@@ -750,7 +750,7 @@ const getDefs = vnode => {
     }
   }
 
-  if (isEmpty(children)) return [];
+  if (isEmpty(children)) return emptyArray;
 
   if (Array.isArray(children)) return children;
 
@@ -939,7 +939,7 @@ const flush = queues => {
       const { node } = child;
       if (node) {
         if (!node.parentNode) {
-          updateNode(node, emptyProps, props);
+          updateNode(node, emptyObject, props);
           parentNode.insertBefore(node, before);
           break;
         }
