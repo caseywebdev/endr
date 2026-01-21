@@ -532,7 +532,7 @@ const updateNode = (node, prev, next) => {
     } else if (key === 'style' && isObject(next[key])) {
       const { style } = /** @type {HTMLElement | SVGElement} */ (node);
       const prevStyle = /** @type {Partial<CSSStyleDeclaration>} */ (
-        isObject(prev[key]) ? prev[key] : {}
+        isObject(prev[key]) ? prev[key] : emptyObject
       );
       const nextStyle = /** @type {Partial<CSSStyleDeclaration>} */ (next[key]);
       for (const key in prevStyle) if (!(key in nextStyle)) style[key] = '';
