@@ -41,7 +41,7 @@
  * @typedef {DataAttributes & {
  *   accumulate?: 'none' | 'sum' | null;
  *   additive?: 'replace' | 'sum' | null;
- *   'alignment-baseline?': string | null;
+ *   'alignment-baseline'?: string | null;
  *   amplitude?: string | null;
  *   attributeName?: string | null;
  *   azimuth?: string | null;
@@ -248,29 +248,35 @@
  */
 
 /**
+ * @template T
+ * @typedef {T extends
+ *   | string
+ *   | number
+ *   | boolean
+ *   | AnyFunction
+ *   | null
+ *   | undefined
+ *   ? T
+ *   : never} Simple
+ */
+
+/**
  * @template {Element} T
  * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
  * @template [Attributes=ElementAttributes<T>] Default is `ElementAttributes<T>`
  * @typedef {{
- *   [K in keyof Shared | keyof T | keyof Attributes as K extends keyof Shared
+ *   [K in keyof T | keyof Shared | keyof Attributes as K extends
+ *     | keyof Shared
+ *     | keyof Attributes
  *     ? K
  *     : K extends keyof T
- *       ? T[K] extends
- *           | string
- *           | number
- *           | boolean
- *           | AnyFunction
- *           | null
- *           | undefined
- *         ? K
- *         : never
- *       : K]?: K extends keyof Shared
- *     ? Shared[K]
- *     : K extends keyof T
- *       ? T[K] | null
- *       : K extends keyof Attributes
- *         ? Attributes[K]
- *         : never;
+ *       ? Simple<T[K]> extends never
+ *         ? never
+ *         : K
+ *       : never]?:
+ *     | (K extends keyof T ? Simple<T[K]> : never)
+ *     | (K extends keyof Shared ? Shared[K] : never)
+ *     | (K extends keyof Attributes ? Attributes[K] : never);
  * }} ElementProps
  */
 
