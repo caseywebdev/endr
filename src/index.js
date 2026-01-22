@@ -249,33 +249,29 @@
 
 /**
  * @template T
- * @typedef {T extends
- *   | string
- *   | number
- *   | boolean
- *   | AnyFunction
- *   | null
- *   | undefined
- *   ? T
- *   : never} Simple
+ * @typedef {{
+ *   [K in keyof T as T[K] extends
+ *     | string
+ *     | number
+ *     | boolean
+ *     | AnyFunction
+ *     | null
+ *     | undefined
+ *     ? K
+ *     : never]?: T[K] | null;
+ * }} SimpleProps
  */
 
 /**
  * @template {Element} T
- * @template [Shared=SharedElementProps<T>] Default is `SharedElementProps<T>`
+ * @template [SimpleTProps=SimpleProps<T>] Default is `SimpleProps<T>`
+ * @template [SharedProps=SharedElementProps<T>] Default is
+ *   `SharedElementProps<T>`
  * @template [Attributes=ElementAttributes<T>] Default is `ElementAttributes<T>`
  * @typedef {{
- *   [K in keyof T | keyof Shared | keyof Attributes as K extends
- *     | keyof Shared
- *     | keyof Attributes
- *     ? K
- *     : K extends keyof T
- *       ? Simple<T[K]> extends never
- *         ? never
- *         : K
- *       : never]?:
- *     | (K extends keyof T ? Simple<T[K]> : never)
- *     | (K extends keyof Shared ? Shared[K] : never)
+ *   [K in keyof SimpleTProps | keyof SharedProps | keyof Attributes]?:
+ *     | (K extends keyof SimpleTProps ? SimpleTProps[K] : never)
+ *     | (K extends keyof SharedProps ? SharedProps[K] : never)
  *     | (K extends keyof Attributes ? Attributes[K] : never);
  * }} ElementProps
  */
