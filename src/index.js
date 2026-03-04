@@ -736,19 +736,20 @@ const queueUpdate = vnode => {
 
 /** @param {Vnode} vnode */
 const getDefs = vnode => {
-  let { children } = vnode.props;
-  if (isFunction(vnode.type)) {
+  const { props, type } = vnode;
+  let { children } = props;
+  if (isFunction(type)) {
     const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
     currentVnode = vnode;
     effectIndex = 0;
     refIndex = 0;
     try {
-      children = vnode.type(vnode.props);
+      children = type(props);
+      [currentVnode, effectIndex, refIndex] = prev;
     } catch (exception) {
       children = null;
-      vnode.catch(exception);
-    } finally {
       [currentVnode, effectIndex, refIndex] = prev;
+      vnode.catch(exception);
     }
   }
 
