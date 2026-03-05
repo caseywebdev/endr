@@ -58,8 +58,7 @@ being found.
 - `useMemo` can be called without a second argument to default to an empty
   dependency array.
 - `setState` returns the most recently set value.
-- `setState` will not queue a re-render when it is called during the render
-  function.
+- `useState` returns a third element that is the same as `setState` but will not trigger a re-render.
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
 - Portals can be used with the `Portal` component instead of `createPortal`.
