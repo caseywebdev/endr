@@ -318,7 +318,7 @@
  *   inserts: Vnode[];
  *   nodeUpdates: Parameters<typeof updateNode>[];
  *   removes: (Element | Text)[];
- *   updates: Vnode[];
+ *   updates: Set<Vnode>;
  * }} Queues
  */
 
@@ -366,7 +366,7 @@
 
 /**
  * @template T
- * @typedef {[T, SetState<T>]} State
+ * @typedef {[T, SetState<T>, SetState<T>]} State
  */
 
 const { console, Element, queueMicrotask } = globalThis;
@@ -431,6 +431,30 @@ export const Try = props => {
 };
 
 /**
+ * @param {Props} prev
+ * @param {Props} next
+ */
+const defaultMemo = (prev, next) => {
+  if (prev === next) return true;
+
+  for (const key in prev) if (prev[key] !== next[key]) return false;
+
+  for (const key in next) if (!(key in prev)) return false;
+
+  return true;
+};
+
+/**
+ * @template {Component} T
+ * @param {T} Component
+ * @param {typeof defaultMemo} [memo]
+ */
+export const memo = (Component, memo = defaultMemo) => {
+  Component.memo = memo;
+  return Component;
+};
+
+/**
  * @template T
  * @param {T} value
  */
@@ -492,6 +516,212 @@ const createNode = (type, props, parentNode) => {
   );
 };
 
+/** @type {Vnode | null} */
+let currentVnode = null;
+
+let effectIndex = 0;
+
+let refIndex = 0;
+
+/**
+ * @template T
+ * @param {T | (() => T)} initial
+ */
+export const useRef = initial => {
+  const vnode = /** @type {Vnode} */ (currentVnode);
+  vnode.refs ??= [];
+  let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
+  if (!ref) {
+    ref = { current: isFunction(initial) ? initial() : initial };
+    vnode.refs.push(ref);
+  }
+  return ref;
+};
+
+/**
+ * @param {unknown[]} before
+ * @param {unknown[]} after
+ */
+const depsChanged = (before, after) => {
+  if (before === after) return false;
+
+  let { length } = before;
+  if (length !== after.length) return true;
+
+  while (length--) if (before[length] !== after[length]) return true;
+
+  return false;
+};
+
+/**
+ * @param {AfterEffect} fn
+ * @param {unknown[]} [deps]
+ */
+export const useEffect = (fn, deps) => {
+  const vnode = /** @type {Vnode} */ (currentVnode);
+  vnode.effects ??= [];
+  const effect = vnode.effects[effectIndex++];
+  if (!effect) vnode.effects.push({ before: undefined, after: fn, deps });
+  else if (!effect.deps || !deps || depsChanged(effect.deps, deps)) {
+    effect.after = fn;
+    effect.deps = deps;
+  }
+};
+
+/**
+ * @template T
+ * @param {(...args: unknown[]) => T} fn
+ * @param {unknown[]} deps
+ */
+export const useMemo = (fn, deps = emptyArray) => {
+  const ref = useRef(() => ({ value: fn(), deps }));
+  if (depsChanged(ref.current.deps, deps)) {
+    ref.current.value = fn();
+    ref.current.deps = deps;
+  }
+  return ref.current.value;
+};
+
+/**
+ * @param {Vnode} a
+ * @param {Vnode} b
+ */
+const batchComparator = (a, b) => {
+  while (a.depth > b.depth) {
+    a = /** @type {Vnode} */ (a.parent);
+    if (a === b) return 1;
+  }
+
+  while (b.depth > a.depth) {
+    b = /** @type {Vnode} */ (b.parent);
+    if (b === a) return -1;
+  }
+
+  while (a.parent !== b.parent) {
+    a = /** @type {Vnode} */ (a.parent);
+    b = /** @type {Vnode} */ (b.parent);
+  }
+
+  return a.index - b.index;
+};
+
+/** @param {Vnode} vnode */
+const queueUpdate = vnode => {
+  if (vnode.state === 3) return;
+
+  const { queues } = vnode;
+  const { updates } = queues;
+
+  if (updates.size === 0) {
+    queueMicrotask(() => {
+      const batch = [...updates].sort(batchComparator);
+      updates.clear();
+      for (const vnode of batch) if (vnode.state === 1) update(vnode);
+      flush(queues);
+    });
+  }
+  updates.add(vnode);
+  vnode.state = 1;
+};
+
+/**
+ * @template T
+ * @param {T | (() => T)} initial
+ */
+export const useState = initial => {
+  const vnode = /** @type {Vnode} */ (currentVnode);
+  /** @type {State<T>} */
+  const state = useMemo(() => [
+    isFunction(initial) ? initial() : initial,
+    maybeValue => {
+      const value = isFunction(maybeValue) ? maybeValue(state[0]) : maybeValue;
+      if (value !== state[0]) {
+        state[0] = value;
+        queueUpdate(vnode);
+      }
+      return value;
+    },
+    maybeValue =>
+      (state[0] = isFunction(maybeValue) ? maybeValue(state[0]) : maybeValue)
+  ]);
+  return state;
+};
+
+/**
+ * @template {AnyFunction} T
+ * @param {T} fn
+ */
+export const useCallback = fn => {
+  const ref = useRef(() => fn);
+  ref.current = fn;
+  return useMemo(
+    () => /** @type {T} */ ((...args) => ref.current.apply(null, args))
+  );
+};
+
+/**
+ * @template {Context<any>} T
+ * @param {T} Context
+ */
+export const useContext = Context => {
+  const vnode = /** @type {Vnode} */ (currentVnode);
+
+  const context = vnode.contexts?.get(Context);
+
+  useEffect(() => {
+    if (!context) return;
+
+    context.deps.add(vnode);
+    return () => context.deps.delete(vnode);
+  }, [context, vnode]);
+
+  return /** @type {T['value']} */ ((context ?? Context).value);
+};
+
+/** @param {Vnode} vnode */
+const getDefs = vnode => {
+  const { props, type } = vnode;
+  let { children } = props;
+  if (isFunction(type)) {
+    const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
+    currentVnode = vnode;
+    effectIndex = 0;
+    refIndex = 0;
+    try {
+      children = type(props);
+      [currentVnode, effectIndex, refIndex] = prev;
+    } catch (exception) {
+      children = null;
+      [currentVnode, effectIndex, refIndex] = prev;
+      vnode.catch(exception);
+    }
+  }
+
+  if (isEmpty(children)) return emptyArray;
+
+  if (Array.isArray(children)) return children;
+
+  return [children];
+};
+
+/** @param {unknown} def */
+const normalizeDef = def => {
+  if (isEmpty(def)) return emptyDef;
+
+  if (Array.isArray(def)) return jsx(Fragment, { children: def });
+
+  if (
+    isObject(def) &&
+    (typeof def.type === 'string' || isFunction(def.type)) &&
+    isObject(def.props) &&
+    'key' in def
+  ) {
+    return /** @type {Def} */ (def);
+  }
+
+  return jsx(textType, { nodeValue: def });
+};
+
 /**
  * @template {Element} Node
  * @param {Node} node
@@ -548,234 +778,6 @@ const updateNode = (node, prev, next) => {
       );
     } else /** @type {Element} */ (node).removeAttribute(key);
   }
-};
-
-/** @type {Vnode | null} */
-let currentVnode = null;
-
-let effectIndex = 0;
-
-let refIndex = 0;
-
-/**
- * @template T
- * @param {T | (() => T)} initial
- */
-export const useRef = initial => {
-  const vnode = /** @type {Vnode} */ (currentVnode);
-  vnode.refs ??= [];
-  let ref = /** @type {undefined | Ref<T>} */ (vnode.refs[refIndex++]);
-  if (!ref) {
-    ref = { current: isFunction(initial) ? initial() : initial };
-    vnode.refs.push(ref);
-  }
-  return ref;
-};
-
-/**
- * @param {AfterEffect} fn
- * @param {unknown[]} [deps]
- */
-export const useEffect = (fn, deps) => {
-  const vnode = /** @type {Vnode} */ (currentVnode);
-  vnode.effects ??= [];
-  const effect = vnode.effects[effectIndex++];
-  if (!effect) vnode.effects.push({ before: undefined, after: fn, deps });
-  else if (!effect.deps || !deps || depsChanged(effect.deps, deps)) {
-    effect.after = fn;
-    effect.deps = deps;
-  }
-};
-
-/**
- * @template T
- * @param {(...args: unknown[]) => T} fn
- * @param {unknown[]} deps
- */
-export const useMemo = (fn, deps = emptyArray) => {
-  const ref = useRef(() => ({ value: fn(), deps }));
-  if (depsChanged(ref.current.deps, deps)) {
-    ref.current.value = fn();
-    ref.current.deps = deps;
-  }
-  return ref.current.value;
-};
-
-/**
- * @template T
- * @param {T | (() => T)} initial
- */
-export const useState = initial => {
-  const vnode = /** @type {Vnode} */ (currentVnode);
-  /** @type {State<T>} */
-  const state = useMemo(() => [
-    isFunction(initial) ? initial() : initial,
-    maybeValue => {
-      const value = isFunction(maybeValue) ? maybeValue(state[0]) : maybeValue;
-      if (value !== state[0]) {
-        state[0] = value;
-        queueUpdate(vnode);
-      }
-      return value;
-    }
-  ]);
-  return state;
-};
-
-/**
- * @param {unknown[]} before
- * @param {unknown[]} after
- */
-const depsChanged = (before, after) => {
-  if (before === after) return false;
-
-  let { length } = before;
-  if (length !== after.length) return true;
-
-  while (length--) if (before[length] !== after[length]) return true;
-
-  return false;
-};
-
-/**
- * @template {AnyFunction} T
- * @param {T} fn
- */
-export const useCallback = fn => {
-  const ref = useRef(() => fn);
-  ref.current = fn;
-  return useMemo(
-    () => /** @type {T} */ ((...args) => ref.current.apply(null, args))
-  );
-};
-
-/**
- * @param {Props} prev
- * @param {Props} next
- */
-const defaultMemo = (prev, next) => {
-  if (prev === next) return true;
-
-  for (const key in prev) if (prev[key] !== next[key]) return false;
-
-  for (const key in next) if (!(key in prev)) return false;
-
-  return true;
-};
-
-/**
- * @template {Component} T
- * @param {T} Component
- * @param {typeof defaultMemo} [memo]
- */
-export const memo = (Component, memo = defaultMemo) => {
-  Component.memo = memo;
-  return Component;
-};
-
-/**
- * @template {Context<any>} T
- * @param {T} Context
- */
-export const useContext = Context => {
-  const vnode = /** @type {Vnode} */ (currentVnode);
-
-  const context = vnode.contexts?.get(Context);
-
-  useEffect(() => {
-    if (!context) return;
-
-    context.deps.add(vnode);
-    return () => context.deps.delete(vnode);
-  }, [context, vnode]);
-
-  return /** @type {T['value']} */ ((context ?? Context).value);
-};
-
-/**
- * @param {Vnode} a
- * @param {Vnode} b
- */
-const batchComparator = (a, b) => {
-  while (a.depth > b.depth) {
-    a = /** @type {Vnode} */ (a.parent);
-    if (a === b) return 1;
-  }
-
-  while (b.depth > a.depth) {
-    b = /** @type {Vnode} */ (b.parent);
-    if (b === a) return -1;
-  }
-
-  while (a.parent !== b.parent) {
-    a = /** @type {Vnode} */ (a.parent);
-    b = /** @type {Vnode} */ (b.parent);
-  }
-
-  return a.index - b.index;
-};
-
-/** @param {Vnode} vnode */
-const queueUpdate = vnode => {
-  if (vnode.state === 1 || vnode.state === 3) return;
-
-  const { queues } = vnode;
-  const { updates } = queues;
-
-  if (updates.length === 0) {
-    queueMicrotask(() => {
-      const batch = updates.sort(batchComparator);
-      queues.updates = [];
-      for (const vnode of batch) if (vnode.state === 1) update(vnode);
-      flush(queues);
-    });
-  }
-  updates.push(vnode);
-  vnode.state = 1;
-};
-
-/** @param {Vnode} vnode */
-const getDefs = vnode => {
-  const { props, type } = vnode;
-  let { children } = props;
-  if (isFunction(type)) {
-    const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
-    currentVnode = vnode;
-    effectIndex = 0;
-    refIndex = 0;
-    try {
-      children = type(props);
-      [currentVnode, effectIndex, refIndex] = prev;
-    } catch (exception) {
-      children = null;
-      [currentVnode, effectIndex, refIndex] = prev;
-      vnode.catch(exception);
-    }
-  }
-
-  if (isEmpty(children)) return emptyArray;
-
-  if (Array.isArray(children)) return children;
-
-  return [children];
-};
-
-/** @param {unknown} def */
-const normalizeDef = def => {
-  if (isEmpty(def)) return emptyDef;
-
-  if (Array.isArray(def)) return jsx(Fragment, { children: def });
-
-  if (
-    isObject(def) &&
-    (typeof def.type === 'string' || isFunction(def.type)) &&
-    isObject(def.props) &&
-    'key' in def
-  ) {
-    return /** @type {Def} */ (def);
-  }
-
-  return jsx(textType, { nodeValue: def });
 };
 
 /** @param {Vnode} vnode */
@@ -1015,7 +1017,7 @@ export const createRender = parentNode => {
       inserts: [],
       nodeUpdates: [],
       removes: [],
-      updates: []
+      updates: new Set()
     },
     refs: null,
     sibling: null,

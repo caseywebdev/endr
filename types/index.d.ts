@@ -29,13 +29,13 @@ export function Try(props: {
     children?: Children;
     catch: Vnode["catch"];
 }): Children;
+export function memo<T extends Component>(Component: T, memo?: typeof defaultMemo): T;
 export function createContext<T>(value: T): Context<T>;
 export function useRef<T>(initial: T | (() => T)): Ref<T>;
 export function useEffect(fn: AfterEffect, deps?: unknown[]): void;
 export function useMemo<T>(fn: (...args: unknown[]) => T, deps?: unknown[]): T;
 export function useState<T>(initial: T | (() => T)): State<T>;
 export function useCallback<T extends AnyFunction>(fn: T): T;
-export function memo<T extends Component>(Component: T, memo?: typeof defaultMemo): T;
 export function useContext<T extends Context<any>>(Context: T): T["value"];
 export function createRender(parentNode: ParentNode): (children?: Children) => void;
 export type Recursive<T> = T | RecursiveArray<T>;
@@ -278,7 +278,7 @@ export type Queues = {
     inserts: Vnode[];
     nodeUpdates: Parameters<typeof updateNode>[];
     removes: (Element | Text)[];
-    updates: Vnode[];
+    updates: Set<Vnode>;
 };
 export type ParentNode = Element | ShadowRoot;
 export type Vnode = {
@@ -311,7 +311,7 @@ export type Context<T> = ((props: {
     value: T;
 };
 export type SetState<T> = <U extends T>(value: (T extends AnyFunction ? never : U) | ((current: T) => U)) => U;
-export type State<T> = [T, SetState<T>];
+export type State<T> = [T, SetState<T>, SetState<T>];
 /**
  * @param {Props} prev
  * @param {Props} next
