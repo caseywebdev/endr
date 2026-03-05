@@ -366,7 +366,7 @@
 
 /**
  * @template T
- * @typedef {[T, SetState<T>, SetState<T>]} State
+ * @typedef {[T, SetState<T>]} State
  */
 
 const { console, Element, queueMicrotask } = globalThis;
@@ -640,9 +640,7 @@ export const useState = initial => {
         queueUpdate(vnode);
       }
       return value;
-    },
-    maybeValue =>
-      (state[0] = isFunction(maybeValue) ? maybeValue(state[0]) : maybeValue)
+    }
   ]);
   return state;
 };

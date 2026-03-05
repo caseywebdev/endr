@@ -311,7 +311,7 @@ export type Context<T> = ((props: {
     value: T;
 };
 export type SetState<T> = <U extends T>(value: (T extends AnyFunction ? never : U) | ((current: T) => U)) => U;
-export type State<T> = [T, SetState<T>, SetState<T>];
+export type State<T> = [T, SetState<T>];
 /**
  * @param {Props} prev
  * @param {Props} next
