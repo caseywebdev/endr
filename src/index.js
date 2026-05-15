@@ -949,7 +949,6 @@ const flush = queues => {
 
         if (node === before || node.nextSibling === before) break;
 
-        // @ts-expect-error moveBefore is available on modern browsers
         parentNode[moveBefore](node, before);
 
         if (child === vnode) break;

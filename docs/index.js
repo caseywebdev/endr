@@ -25,7 +25,7 @@ const {
   ResizeObserver,
   setTimeout,
   setInterval
-} = globalThis;
+} = globalThis.window;
 
 const resolution = 10;
 

@@ -1,13 +1,9 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "checkJs": true,
     "jsx": "preserve",
     "jsxImportSource": "endr",
-    "module": "NodeNext",
-    "noEmit": true,
-    "strict": true,
-    "target": "ESNext"
+    "noEmit": true
   },
   "exclude": [
     "docs/dist.js",
