@@ -1,8 +1,7 @@
-/** @import {Children} from 'endr' */
+/** @import {Children, ParentNode} from 'endr' */
 
 import {
   Fragment,
-  Portal,
   Try,
   createContext,
   createRender,
@@ -34,6 +33,15 @@ const numberFormatter = new Intl.NumberFormat();
 /** @param {number} n */
 const getColor = n =>
   `rgb(${32 + ((n * 12) % 128)}, ${32 + ((n * 23) % 128)}, ${32 + ((n * 56) % 128)})`;
+
+/** @param {{ children: Children; to: ParentNode }} props */
+export const Portal = ({ children, to }) => {
+  const render = useMemo(() => createRender(to), [to]);
+
+  useEffect(() => () => render(), [render]);
+
+  render(<Context value={useContext(Context)}>{children}</Context>);
+};
 
 /** @param {{ children: Children }} props */
 const Flaky = ({ children }) => {

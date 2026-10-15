@@ -60,11 +60,29 @@ being found.
 - `setState` returns the most recently set value.
 - There is no `useLayoutEffect`.
 - `useEffect` is called immediately after the DOM is reconciled.
-- Portals can be used with the `Portal` component instead of `createPortal`.
+- First class portals are not included. This is an intentional decision to remove ambiguous behavior and really focus on the essentials for the core API.
+
+  A `Portal` component like
+
+  ```js
+  /** @param {{ children: Children; to: ParentNode }} props */
+  export const Portal = ({ children, to }) => {
+    const render = useMemo(() => createRender(to), [to]);
+
+    useEffect(() => () => render(), [render]);
+
+    render(children);
+  };
+  ```
+
+  being used like
+
   ```js
   <Portal to={parentElement}><div /></Portal>
   ```
-  is equivalent to React's
+
+  is roughly equivalent to React's
+
   ```js
   createPortal(<div />, parentElement)
   ```
@@ -84,8 +102,7 @@ being found.
   ```
   can be used, for example, to show an error message whenever rendering
     `<AllMyChildren />` or any descendents throws an exception.
-  - React's `Suspense` can be recreated with `Try` by awaiting all thrown
-    promises, if desired.
+- React's `Suspense` can be recreated with `Try` by awaiting all thrown promises, if desired.
 - `createRender` replaces `createRoot`. `createRender` returns a render function
   that can be called as often as desired to re-render at the root. To unmount
   all rendered components, simply call render with no children.

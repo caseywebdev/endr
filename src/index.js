@@ -421,9 +421,6 @@ const isObject = value => typeof value === 'object' && value !== null;
 /** @param {{ children?: Children }} props */
 export const Fragment = props => props.children;
 
-/** @param {{ children?: Children; to: ParentNode }} props */
-export const Portal = props => props.children;
-
 /** @param {{ children?: Children; catch: Vnode['catch'] }} props */
 export const Try = props => {
   /** @type {Vnode} */ (currentVnode).catch = props.catch;
@@ -861,8 +858,8 @@ const update = vnode => {
           lastNode: null,
           node: createNode(type, props, parentNode),
           parent: vnode,
-          parentNode: type === Portal ? props.to : parentNode,
-          prevNode: type === Portal ? props.to.lastChild : prevNode,
+          parentNode,
+          prevNode,
           props,
           queues,
           refs: null,
@@ -877,15 +874,13 @@ const update = vnode => {
       if (child.node) needsInsert = true;
     }
 
-    if (child.parentNode === parentNode) child.prevNode = prevNode;
+    child.prevNode = prevNode;
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
     updateChild(child);
     if (nodeUpdate) nodeUpdates.push(nodeUpdate);
     if (needsInsert) inserts.push(child);
-    if (child.parentNode === parentNode && child.lastNode) {
-      prevNode = child.lastNode;
-    }
+    if (child.lastNode) prevNode = child.lastNode;
     prevChild = child;
   }
   vnode.lastNode = vnode.node ?? prevNode ?? null;
@@ -919,9 +914,7 @@ const remove = (vnode, removeNode = true) => {
 
   const removeChildNode = removeNode && !node;
 
-  for (; child; child = child.sibling) {
-    remove(child, removeChildNode || child.type === Portal);
-  }
+  for (; child; child = child.sibling) remove(child, removeChildNode);
 
   if (node) {
     if (props.ref) props.ref.current = null;

@@ -21,10 +21,6 @@ export function jsxsDEV<T extends Type>(type: T, props: Props<T>, key?: Key): {
 export function Fragment(props: {
     children?: Children;
 }): Children;
-export function Portal(props: {
-    children?: Children;
-    to: ParentNode;
-}): Children;
 export function Try(props: {
     children?: Children;
     catch: Vnode["catch"];
