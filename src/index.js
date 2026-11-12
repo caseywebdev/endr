@@ -649,9 +649,7 @@ export const useState = initial => {
 export const useCallback = fn => {
   const ref = useRef(() => fn);
   ref.current = fn;
-  return useMemo(
-    () => /** @type {T} */ ((...args) => ref.current.apply(null, args))
-  );
+  return useMemo(() => /** @type {T} */ ((...args) => ref.current(...args)));
 };
 
 /**
@@ -722,8 +720,12 @@ const normalizeDef = def => {
  * @param {Node} node
  * @param {keyof Node} key
  */
-const isSimpleProperty = (node, key) =>
-  key in node && (node[key] == null || !isObject(node[key]));
+const isSimpleProperty = (node, key) => {
+  if (!(key in node)) return false;
+
+  const value = node[key];
+  return value == null || !isObject(value);
+};
 
 /**
  * @template {Element | Text} T
@@ -751,25 +753,28 @@ const updateNode = (node, prev, next) => {
   }
 
   for (const key in next) {
-    if (key === 'children' || prev[key] === next[key]) continue;
+    if (key === 'children') continue;
+
+    const value = next[key];
+    if (prev[key] === value) continue;
 
     if (key === 'ref') {
       if (prev.ref) prev.ref.current = null;
       if (next.ref) next.ref.current = node;
-    } else if (key === 'style' && isObject(next[key])) {
+    } else if (key === 'style' && isObject(value)) {
       const { style } = /** @type {HTMLElement | SVGElement} */ (node);
       const prevStyle = /** @type {Partial<CSSStyleDeclaration>} */ (
         isObject(prev[key]) ? prev[key] : emptyObject
       );
-      const nextStyle = /** @type {Partial<CSSStyleDeclaration>} */ (next[key]);
+      const nextStyle = /** @type {Partial<CSSStyleDeclaration>} */ (value);
       for (const key in prevStyle) if (!(key in nextStyle)) style[key] = '';
       for (const key in nextStyle) style[key] = nextStyle[key] ?? '';
       // @ts-expect-error assignment of a readonly property would fail
-    } else if (isSimpleProperty(node, key)) node[key] = next[key] ?? '';
-    else if (next[key] != null) {
+    } else if (isSimpleProperty(node, key)) node[key] = value ?? '';
+    else if (value != null) {
       /** @type {Element} */ (node).setAttribute(
         key,
-        /** @type {string} */ (next[key])
+        /** @type {string} */ (value)
       );
     } else /** @type {Element} */ (node).removeAttribute(key);
   }
@@ -823,14 +828,13 @@ const update = vnode => {
     ++i
   ) {
     const { type, props, key } = normalizeDef(defs[i]);
-    let child = prevChildren?.get(key ?? i);
+    const id = key ?? i;
+    let child = prevChildren?.get(id);
     /** @type {Parameters<typeof updateNode> | null} */
     let nodeUpdate = null;
     let needsInsert = false;
     if (child?.type === type) {
-      /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).delete(
-        key ?? i
-      );
+      /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).delete(id);
       child.index = i;
       child.sibling = null;
       if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
@@ -924,11 +928,13 @@ const remove = (vnode, removeNode = true) => {
 
 /** @param {Queues} queues */
 const flush = queues => {
-  for (const node of queues.removes) node.remove();
+  const { removes, inserts, nodeUpdates, afterEffects } = queues;
 
-  queues.removes = [];
+  for (const node of removes) node.remove();
 
-  for (const vnode of queues.inserts) {
+  removes.length = 0;
+
+  for (const vnode of inserts) {
     const { parentNode, prevNode, props } = vnode;
     const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
     for (let child = /** @type {Vnode | null} */ (vnode); child; ) {
@@ -961,13 +967,13 @@ const flush = queues => {
     }
   }
 
-  queues.inserts = [];
+  inserts.length = 0;
 
-  for (const args of queues.nodeUpdates) updateNode.apply(null, args);
+  for (const [node, prev, next] of nodeUpdates) updateNode(node, prev, next);
 
-  queues.nodeUpdates = [];
+  nodeUpdates.length = 0;
 
-  for (const vnode of queues.afterEffects) {
+  for (const vnode of afterEffects) {
     try {
       for (const effect of /** @type {NonNullable<Vnode['effects']>} */ (
         vnode.effects
@@ -982,7 +988,7 @@ const flush = queues => {
     }
   }
 
-  queues.afterEffects = [];
+  afterEffects.length = 0;
 };
 
 /** @param {ParentNode} parentNode */
