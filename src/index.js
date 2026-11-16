@@ -795,9 +795,10 @@ const update = vnode => {
   const { depth, queues } = vnode;
   const { afterEffects, inserts, nodeUpdates } = queues;
 
-  let { child } = vnode;
   const children = /** @type {Map<unknown, Vnode>} */ (new Map());
-  for (; child; child = child.sibling) children.set(child.key, child);
+  for (let { child } = vnode; child; child = child.sibling) {
+    children.set(child.key, child);
+  }
   const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
 
