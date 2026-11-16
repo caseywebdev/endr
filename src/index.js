@@ -795,14 +795,9 @@ const update = vnode => {
   const { depth, queues } = vnode;
   const { afterEffects, inserts, nodeUpdates } = queues;
 
-  let child = vnode.child;
-  const prevChildren = child && /** @type {Map<unknown, Vnode>} */ (new Map());
-  for (; child; child = child.sibling) {
-    /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).set(
-      child.key ?? child.index,
-      child
-    );
-  }
+  let { child } = vnode;
+  const children = /** @type {Map<unknown, Vnode>} */ (new Map());
+  for (; child; child = child.sibling) children.set(child.key, child);
   const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
 
@@ -827,14 +822,13 @@ const update = vnode => {
     i < defs.length;
     ++i
   ) {
-    const { type, props, key } = normalizeDef(defs[i]);
-    const id = key ?? i;
-    let child = prevChildren?.get(id);
+    const { type, props, key = i } = normalizeDef(defs[i]);
+    let child = children.get(key);
     /** @type {Parameters<typeof updateNode> | null} */
     let nodeUpdate = null;
     let needsInsert = false;
     if (child?.type === type) {
-      /** @type {NonNullable<typeof prevChildren>} */ (prevChildren).delete(id);
+      children.delete(key);
       child.index = i;
       child.sibling = null;
       if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
@@ -889,7 +883,7 @@ const update = vnode => {
   }
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  if (prevChildren) for (const child of prevChildren.values()) remove(child);
+  if (children) for (const child of children.values()) remove(child);
 
   if (vnode.effects) afterEffects.push(vnode);
 };
@@ -998,7 +992,7 @@ export const createRender = parentNode => {
     depth: 0,
     effects: null,
     index: 0,
-    key: undefined,
+    key: 0,
     lastNode: null,
     node: null,
     parent: null,
