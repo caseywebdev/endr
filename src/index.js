@@ -612,7 +612,7 @@ const queueUpdate = vnode => {
   if (updates.size === 0) {
     queueMicrotask(() => {
       const batch = [...updates].sort(batchComparator);
-      updates.clear();
+      queues.updates = new Set();
       for (const vnode of batch) if (vnode.state === 1) update(vnode);
       flush(queues);
     });
@@ -928,11 +928,14 @@ const remove = (vnode, removeNode = true) => {
 
 /** @param {Queues} queues */
 const flush = queues => {
-  const { removes, inserts, nodeUpdates, afterEffects } = queues;
+  const { afterEffects, inserts, nodeUpdates, removes } = queues;
+
+  queues.afterEffects = [];
+  queues.inserts = [];
+  queues.nodeUpdates = [];
+  queues.removes = [];
 
   for (const node of removes) node.remove();
-
-  removes.length = 0;
 
   for (const vnode of inserts) {
     const { parentNode, prevNode, props } = vnode;
@@ -967,11 +970,7 @@ const flush = queues => {
     }
   }
 
-  inserts.length = 0;
-
   for (const [node, prev, next] of nodeUpdates) updateNode(node, prev, next);
-
-  nodeUpdates.length = 0;
 
   for (const vnode of afterEffects) {
     try {
@@ -987,8 +986,6 @@ const flush = queues => {
       vnode.catch(exception);
     }
   }
-
-  afterEffects.length = 0;
 };
 
 /** @param {ParentNode} parentNode */
