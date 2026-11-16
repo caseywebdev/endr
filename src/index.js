@@ -795,7 +795,8 @@ const update = vnode => {
   const { depth, queues } = vnode;
   const { afterEffects, inserts, nodeUpdates } = queues;
 
-  const children = /** @type {Map<unknown, Vnode>} */ (new Map());
+  /** @type {Map<unknown, Vnode>} */
+  const children = new Map();
   for (let { child } = vnode; child; child = child.sibling) {
     children.set(child.key, child);
   }
