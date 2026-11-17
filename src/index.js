@@ -872,7 +872,7 @@ const update = vnode => {
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
     if (child.state) updateChild(child);
-    if (prevProps) nodeUpdates.push(child, prevProps);
+    if (prevProps != null) nodeUpdates.push(child, prevProps);
     if (needsInsert) inserts.push(child);
     if (child.lastNode) prevNode = child.lastNode;
     prevChild = child;
