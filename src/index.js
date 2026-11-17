@@ -176,11 +176,7 @@
  *   scale?: string | null;
  *   seed?: string | null;
  *   'shape-rendering'?:
- *     | 'auto'
- *     | 'optimizeSpeed'
- *     | 'crispEdges'
- *     | 'geometricPrecision'
- *     | null;
+ *     'auto' | 'optimizeSpeed' | 'crispEdges' | 'geometricPrecision' | null;
  *   side?: string | null;
  *   slope?: string | null;
  *   spacing?: string | null;
@@ -250,15 +246,12 @@
 /**
  * @template T
  * @typedef {{
- *   [K in keyof T as T[K] extends
- *     | string
- *     | number
- *     | boolean
- *     | AnyFunction
- *     | null
- *     | undefined
- *     ? K
- *     : never]?: T[K] | null;
+ *   [
+ *     K in keyof T as T[K] extends
+ *       string | number | boolean | AnyFunction | null | undefined
+ *       ? K
+ *       : never
+ *   ]?: T[K] | null;
  * }} SimpleProps
  */
 
@@ -316,7 +309,7 @@
  * @typedef {{
  *   afterEffects: Vnode[];
  *   inserts: Vnode[];
- *   nodeUpdates: Parameters<typeof updateNode>[];
+ *   nodeUpdates: (Vnode | Props)[];
  *   removes: (Element | Text)[];
  *   updates: Set<Vnode>;
  * }} Queues
@@ -676,44 +669,45 @@ const getDefs = vnode => {
   const { props, type } = vnode;
   let { children } = props;
   if (isFunction(type)) {
-    const prev = /** @type {const} */ ([currentVnode, effectIndex, refIndex]);
+    const prevCurrentVnode = currentVnode;
+    const prevEffectIndex = effectIndex;
+    const prevRefIndex = refIndex;
     currentVnode = vnode;
     effectIndex = 0;
     refIndex = 0;
     try {
       children = type(props);
-      [currentVnode, effectIndex, refIndex] = prev;
+      currentVnode = prevCurrentVnode;
+      effectIndex = prevEffectIndex;
+      refIndex = prevRefIndex;
     } catch (exception) {
       children = null;
-      [currentVnode, effectIndex, refIndex] = prev;
+      currentVnode = prevCurrentVnode;
+      effectIndex = prevEffectIndex;
+      refIndex = prevRefIndex;
       vnode.catch(exception);
     }
   }
 
-  if (isEmpty(children)) return emptyArray;
-
-  if (Array.isArray(children)) return children;
-
-  return [children];
+  return Array.isArray(children)
+    ? children
+    : isEmpty(children)
+      ? emptyArray
+      : [children];
 };
 
 /** @param {unknown} def */
-const normalizeDef = def => {
-  if (isEmpty(def)) return emptyDef;
-
-  if (Array.isArray(def)) return jsx(Fragment, { children: def });
-
-  if (
-    isObject(def) &&
-    (typeof def.type === 'string' || isFunction(def.type)) &&
-    isObject(def.props) &&
-    'key' in def
-  ) {
-    return /** @type {Def} */ (def);
-  }
-
-  return jsx(textType, { nodeValue: def });
-};
+const normalizeDef = def =>
+  Array.isArray(def)
+    ? jsx(Fragment, { children: def })
+    : isObject(def) &&
+        (typeof def.type === 'string' || isFunction(def.type)) &&
+        isObject(def.props) &&
+        'key' in def
+      ? /** @type {Def} */ (def)
+      : isEmpty(def)
+        ? emptyDef
+        : jsx(textType, { nodeValue: def });
 
 /**
  * @template {Element} Node
@@ -795,13 +789,7 @@ const update = vnode => {
   const { depth, queues } = vnode;
   const { afterEffects, inserts, nodeUpdates } = queues;
 
-  let { child } = vnode;
-  let onlyChild = child;
-  let children;
-  if (child?.sibling) {
-    children = /** @type {Map<unknown, Vnode>} */ (new Map());
-    for (; child; child = child.sibling) children.set(child.key, child);
-  }
+  let oldChild = vnode.child;
   const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
 
@@ -827,23 +815,21 @@ const update = vnode => {
     ++i
   ) {
     const { type, props, key = i } = normalizeDef(defs[i]);
-    let child = children
-      ? children.get(key)
-      : key === onlyChild?.key
-        ? onlyChild
-        : null;
-    if (children) child = children.get(key);
-    else if (key === onlyChild?.key) child = onlyChild;
-    /** @type {Parameters<typeof updateNode> | null} */
-    let nodeUpdate = null;
+    /** @type {Vnode | null} */
+    let child = oldChild;
+    /** @type {Vnode | null} */
+    let prev = null;
+    for (; child && key !== child.key; prev = child, child = child.sibling);
+    /** @type {Props | null} */
+    let prevProps = null;
     let needsInsert = false;
     if (child?.type === type) {
-      if (children) children.delete(key);
-      else onlyChild = null;
+      if (prev) prev.sibling = child.sibling;
+      else oldChild = child.sibling;
       child.index = i;
       child.sibling = null;
       if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
-        if (child.node) nodeUpdate = [child.node, child.props, props];
+        if (child.node) prevProps = child.props;
         child.props = props;
         child.state = 1;
       }
@@ -887,15 +873,14 @@ const update = vnode => {
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
     updateChild(child);
-    if (nodeUpdate) nodeUpdates.push(nodeUpdate);
+    if (prevProps) nodeUpdates.push(child, prevProps);
     if (needsInsert) inserts.push(child);
     if (child.lastNode) prevNode = child.lastNode;
     prevChild = child;
   }
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  if (children) for (const child of children.values()) remove(child);
-  else if (onlyChild) remove(onlyChild);
+  for (; oldChild; oldChild = oldChild.sibling) remove(oldChild);
 
   if (vnode.effects) afterEffects.push(vnode);
 };
@@ -946,7 +931,7 @@ const flush = queues => {
   for (const vnode of inserts) {
     const { parentNode, prevNode, props } = vnode;
     const before = prevNode ? prevNode.nextSibling : parentNode.firstChild;
-    for (let child = /** @type {Vnode | null} */ (vnode); child; ) {
+    for (let child = /** @type {Vnode | null} */ (vnode); child;) {
       const { node } = child;
       if (node) {
         if (!node.parentNode) {
@@ -976,7 +961,14 @@ const flush = queues => {
     }
   }
 
-  for (const [node, prev, next] of nodeUpdates) updateNode(node, prev, next);
+  for (let i = 0; i < nodeUpdates.length; i += 2) {
+    const { node, props } = /** @type {Vnode} */ (nodeUpdates[i]);
+    updateNode(
+      /** @type {Element | Text} */ (node),
+      /** @type {Props} */ (nodeUpdates[i + 1]),
+      props
+    );
+  }
 
   for (const vnode of afterEffects) {
     try {

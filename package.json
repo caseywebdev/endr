@@ -26,6 +26,7 @@
     "esbuild": "0.28",
     "eslint": "10",
     "eslint-config-coderiety": "2",
+    "puppeteer": "25",
     "typescript": "6"
   },
   "files": [

@@ -268,13 +268,14 @@ export const useList = ({
       start: minIndex
     },
     scrollParent: /** @type {HTMLElement | Document | null} */ (null),
-    scrollTarget: /**
-     * @type {{
-     *   align: ScrollTargetAlign;
-     *   buffer: number;
-     *   index: number;
-     * } | null}
-     */ (null),
+    scrollTarget:
+      /**
+       * @type {{
+       *   align: ScrollTargetAlign;
+       *   buffer: number;
+       *   index: number;
+       * } | null}
+       */ (null),
     syncUpdateCount: 0,
     resolve: () => {
       internal.scrollTarget = null;

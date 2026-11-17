@@ -272,7 +272,7 @@ export type Effect = {
 export type Queues = {
     afterEffects: Vnode[];
     inserts: Vnode[];
-    nodeUpdates: Parameters<typeof updateNode>[];
+    nodeUpdates: (Vnode | Props)[];
     removes: (Element | Text)[];
     updates: Set<Vnode>;
 };
@@ -313,11 +313,4 @@ export type State<T> = [T, SetState<T>];
  * @param {Props} next
  */
 declare function defaultMemo(prev: Props, next: Props): boolean;
-/**
- * @template {Element | Text} T
- * @param {T} node
- * @param {Props<T>} prev
- * @param {Props<T>} next
- */
-declare function updateNode<T extends Element | Text>(node: T, prev: Props<T>, next: Props<T>): void;
 export {};

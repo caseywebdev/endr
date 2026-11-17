@@ -6,6 +6,7 @@
     "noEmit": true
   },
   "exclude": [
+    "bench",
     "docs/dist.js",
     "types/index.d.ts"
   ]
