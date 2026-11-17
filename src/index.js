@@ -605,7 +605,7 @@ const queueUpdate = vnode => {
   if (updates.size === 0) {
     queueMicrotask(() => {
       const batch = [...updates].sort(batchComparator);
-      queues.updates = new Set();
+      updates.clear();
       for (const vnode of batch) if (vnode.state === 1) update(vnode);
       flush(queues);
     });
