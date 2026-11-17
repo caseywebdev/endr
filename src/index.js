@@ -784,6 +784,8 @@ const update = vnode => {
   const { afterEffects, inserts, nodeUpdates } = queues;
 
   let oldChild = vnode.child;
+  /** @type {Map<unknown, Vnode> | undefined} */
+  let oldChildren;
   const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
   const defsIsArray = Array.isArray(defs);
@@ -807,14 +809,20 @@ const update = vnode => {
   let prevNode = vnode.node ? null : vnode.prevNode;
   for (let i = 0, prevChild = null; i < defsLength; ++i) {
     const { type, props, key = i } = normalizeDef(defsIsArray ? defs[i] : defs);
+    /** @type {Vnode | null | undefined} */
     let child = oldChild;
-    let prev = null;
-    for (; child && key !== child.key; prev = child, child = child.sibling);
+    if (child?.key !== key) {
+      if (!oldChildren) {
+        oldChildren = new Map();
+        for (; child; child = child.sibling) oldChildren.set(child.key, child);
+      }
+      child = oldChildren.get(key);
+    }
     let prevProps = null;
     let needsInsert = false;
     if (child?.type === type) {
-      if (prev) prev.sibling = child.sibling;
-      else oldChild = child.sibling;
+      if (child === oldChild) oldChild = child.sibling;
+      oldChildren?.delete(key);
       child.index = i;
       child.sibling = null;
       if (!isFunction(type) || !type.memo?.(child.props, props)) {
@@ -871,7 +879,9 @@ const update = vnode => {
   }
   vnode.lastNode = vnode.node ?? prevNode ?? null;
 
-  for (; oldChild; oldChild = oldChild.sibling) remove(oldChild);
+  if (oldChildren) {
+    for (const oldChild of oldChildren.values()) remove(oldChild);
+  } else if (oldChild) remove(oldChild);
 
   if (vnode.effects) afterEffects.push(vnode);
 };
