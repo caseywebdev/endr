@@ -492,7 +492,7 @@ const createNode = (type, props, parentNode) => {
 
   if (type === textType) {
     return parentNode.ownerDocument.createTextNode(
-      /** @type {{ nodeValue: string }} */ (props).nodeValue
+      /** @type {string} */ (/** @type {unknown} */ (props))
     );
   }
 
@@ -689,17 +689,13 @@ const getDefs = vnode => {
     }
   }
 
-  return Array.isArray(children)
-    ? children
-    : isEmpty(children)
-      ? emptyArray
-      : [children];
+  return children;
 };
 
 /** @param {unknown} def */
 const normalizeDef = def =>
   Array.isArray(def)
-    ? jsx(Fragment, { children: def })
+    ? jsx(/** @type {Type} */ (Fragment), { children: def })
     : isObject(def) &&
         (typeof def.type === 'string' || isFunction(def.type)) &&
         isObject(def.props) &&
@@ -707,7 +703,7 @@ const normalizeDef = def =>
       ? /** @type {Def} */ (def)
       : isEmpty(def)
         ? emptyDef
-        : jsx(textType, { nodeValue: def });
+        : jsx(textType, def);
 
 /**
  * @template {Element} Node
@@ -728,11 +724,9 @@ const isSimpleProperty = (node, key) => {
  * @param {Props<T>} next
  */
 const updateNode = (node, prev, next) => {
-  if (prev === next) return;
-
   // Element.prototype.TEXT_NODE
   if (node.nodeType === 3) {
-    node.nodeValue = /** @type {string} */ (next.nodeValue);
+    node.nodeValue = /** @type {string} */ (next);
     return;
   }
 
@@ -792,6 +786,8 @@ const update = vnode => {
   let oldChild = vnode.child;
   const parentNode = /** @type {ParentNode} */ (vnode.node ?? vnode.parentNode);
   const defs = getDefs(vnode);
+  const defsIsArray = Array.isArray(defs);
+  const defsLength = defsIsArray ? defs.length : isEmpty(defs) ? 0 : 1;
 
   if (vnode.effects) {
     try {
@@ -809,18 +805,11 @@ const update = vnode => {
   vnode.state = 0;
   vnode.child = null;
   let prevNode = vnode.node ? null : vnode.prevNode;
-  for (
-    let i = 0, prevChild = /** @type {Vnode | null} */ (null);
-    i < defs.length;
-    ++i
-  ) {
-    const { type, props, key = i } = normalizeDef(defs[i]);
-    /** @type {Vnode | null} */
+  for (let i = 0, prevChild = null; i < defsLength; ++i) {
+    const { type, props, key = i } = normalizeDef(defsIsArray ? defs[i] : defs);
     let child = oldChild;
-    /** @type {Vnode | null} */
     let prev = null;
     for (; child && key !== child.key; prev = child, child = child.sibling);
-    /** @type {Props | null} */
     let prevProps = null;
     let needsInsert = false;
     if (child?.type === type) {
@@ -828,10 +817,12 @@ const update = vnode => {
       else oldChild = child.sibling;
       child.index = i;
       child.sibling = null;
-      if (!isFunction(child.type) || !child.type.memo?.(child.props, props)) {
-        if (child.node) prevProps = child.props;
-        child.props = props;
-        child.state = 1;
+      if (!isFunction(type) || !type.memo?.(child.props, props)) {
+        if (child.props !== props) {
+          if (child.node) prevProps = child.props;
+          child.props = props;
+        }
+        if (type !== textType) child.state = 1;
       }
       if (
         child.parentNode === vnode.node &&
@@ -872,7 +863,7 @@ const update = vnode => {
     child.prevNode = prevNode;
     if (prevChild) prevChild.sibling = child;
     else vnode.child = child;
-    updateChild(child);
+    if (child.state) updateChild(child);
     if (prevProps) nodeUpdates.push(child, prevProps);
     if (needsInsert) inserts.push(child);
     if (child.lastNode) prevNode = child.lastNode;
