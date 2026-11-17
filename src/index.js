@@ -881,7 +881,7 @@ const update = vnode => {
 
   if (oldChildren) {
     for (const oldChild of oldChildren.values()) remove(oldChild);
-  } else if (oldChild) remove(oldChild);
+  } else for (; oldChild; oldChild = oldChild.sibling) remove(oldChild);
 
   if (vnode.effects) afterEffects.push(vnode);
 };
